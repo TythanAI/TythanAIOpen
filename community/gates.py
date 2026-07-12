@@ -14,22 +14,23 @@ from dataclasses import dataclass
 from typing import Any, Optional
 
 
-UPGRADE_URL = "https://tythanai.io/upgrade"
+UPGRADE_URL = "https://tythanai.io/pricing"
 
-# Premium feature registry — maps feature_key → description shown to user
+# Premium feature registry — maps feature_key → description shown to user.
+# These are the capabilities that live in TythanAI Pro ($39/dev/mo) and
+# Enterprise; the Community Edition intentionally ships without them.
 PREMIUM_FEATURES: dict[str, str] = {
-    "autopr":           "Auto-generate fix Pull Requests for every finding",
+    "ai_fix":           "AI triage & fix suggestions (LLM-assisted)",
+    "autopr":           "Auto-generated fix pull requests (AutoPR)",
+    "ci_gates":         "Managed CI/CD gates on every pull request",
+    "reachability":     "Dependency reachability analysis (is the CVE actually called?)",
+    "cpg_taint":        "Full CPG inter-procedural taint analysis (Go / Java / Rust)",
     "dast":             "DAST / active web scanning (ZAP-based)",
-    "cpg_taint":        "Full CPG taint analysis (Go / Java / Rust)",
-    "ai_fix":           "AI-powered fix suggestions (LLM-based)",
-    "rules_marketplace":"Community rules marketplace with semantic search",
-    "saas_dashboard":   "SaaS usage dashboard & billing API",
-    "webhooks":         "Webhook push for CI/CD pipeline integration",
+    "full_ruleset":     "Full rule library & deep Web3 analysis (symbolic / formal)",
     "economic_risk":    "On-chain economic risk scorer (TON / EVM)",
-    "sbom_compliance":  "SBOM compliance scoring (NTIA / SPDX full profile)",
-    "p2p_consensus":    "P2P consensus simulation & validator analysis",
-    "full_ruleset":     "Full 3 462-rule library (vs 500 in Community)",
-    "code_quality_adv": "Advanced code-quality grades (cognitive complexity, A–F)",
+    "sbom_compliance":  "SBOM & compliance reports (SPDX / CycloneDX)",
+    "integrations":     "Slack & Jira integration",
+    "saas_dashboard":   "SaaS dashboard, webhooks & team management",
     "multi_agent":      "Multi-agent orchestrator (parallel scanner fleet)",
 }
 

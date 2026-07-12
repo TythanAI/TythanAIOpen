@@ -1,6 +1,7 @@
 """
-TythanAI — Enhanced Secret Detector v2.2
-High-entropy + pattern detection for 60+ secret types.
+TythanAI — Secret Detector v2.2
+Pattern + high-entropy detection covering 40+ secret types across 27 providers
+(cloud keys, VCS/CI tokens, payment, messaging, databases, crypto wallets).
 """
 import math, re
 from pathlib import Path
@@ -80,7 +81,7 @@ def _entropy(s: str) -> float:
 
 
 class SecretDetector:
-    """60+ secret patterns + entropy-based detection."""
+    """40+ secret patterns (27 providers) + entropy-based detection."""
 
     ENTROPY_THRESHOLD = 4.5
     MIN_LENGTH        = 20

@@ -1,0 +1,124 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400" width="1200" height="400" role="img" aria-label="TythanAI Community Edition — enterprise-grade code security, now open source">
+  <title>TythanAI Community Edition — enterprise-grade code security, now open source</title>
+  <defs>
+    <linearGradient id="paper" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f6f5f2"/>
+      <stop offset="1" stop-color="#eceae5"/>
+    </linearGradient>
+    <linearGradient id="scan" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#41d18a" stop-opacity="0"/>
+      <stop offset="0.5" stop-color="#41d18a" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#41d18a" stop-opacity="0"/>
+    </linearGradient>
+    <clipPath id="card"><rect x="0" y="0" width="1200" height="400" rx="20"/></clipPath>
+    <clipPath id="codeclip"><rect x="640" y="70" width="500" height="286" rx="14"/></clipPath>
+    <style>
+      .sans { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+      .mono { font-family: ui-monospace, "SF Mono", "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace; }
+      .bar  { transform-box: fill-box; transform-origin: center bottom; animation: pulse 1.8s ease-in-out infinite; }
+      .b2 { animation-delay: .15s } .b3 { animation-delay: .30s } .b4 { animation-delay: .45s } .b5 { animation-delay: .60s }
+      .caret { animation: blink 1.05s step-end infinite; }
+      .sweep { animation: sweep 7s cubic-bezier(.4,0,.2,1) infinite; }
+      .fix   { opacity: 0; animation: reveal 7s ease-in-out infinite; }
+      .vuln  { animation: vulnpulse 7s ease-in-out infinite; }
+      @keyframes pulse { 0%,100% { transform: scaleY(.55) } 50% { transform: scaleY(1) } }
+      @keyframes blink { 0%,50% { opacity: 1 } 51%,100% { opacity: 0 } }
+      @keyframes sweep { 0% { transform: translateY(-120px); opacity: 0 } 8% { opacity: 1 } 42% { opacity: 1 } 55%,100% { transform: translateY(300px); opacity: 0 } }
+      @keyframes reveal { 0%,46% { opacity: 0; transform: translateY(8px) } 60%,92% { opacity: 1; transform: translateY(0) } 100% { opacity: 0; transform: translateY(8px) } }
+      @keyframes vulnpulse { 0%,44% { opacity: 1 } 62%,100% { opacity: .32 } }
+      @media (prefers-reduced-motion: reduce) {
+        .bar,.caret,.sweep,.vuln { animation: none }
+        .fix { animation: none; opacity: 1; transform: none }
+      }
+    </style>
+  </defs>
+
+  <g clip-path="url(#card)">
+    <!-- ground -->
+    <rect width="1200" height="400" fill="url(#paper)"/>
+    <g stroke="#e5e3dd" stroke-width="1">
+      <line x1="0" y1="100" x2="1200" y2="100"/>
+      <line x1="0" y1="200" x2="1200" y2="200"/>
+      <line x1="0" y1="300" x2="1200" y2="300"/>
+      <line x1="300" y1="0" x2="300" y2="400"/>
+      <line x1="600" y1="0" x2="600" y2="400"/>
+    </g>
+
+    <!-- ── LEFT: brand + thesis ─────────────────────────────────────────── -->
+    <!-- waveform logo -->
+    <g transform="translate(64,58)" fill="#0b0b0c">
+      <rect class="bar"    x="0"  y="2"  width="6" height="26" rx="3"/>
+      <rect class="bar b2" x="11" y="2"  width="6" height="26" rx="3"/>
+      <rect class="bar b3" x="22" y="2"  width="6" height="26" rx="3"/>
+      <rect class="bar b4" x="33" y="2"  width="6" height="26" rx="3"/>
+      <rect class="bar b5" x="44" y="2"  width="6" height="26" rx="3"/>
+    </g>
+    <text class="sans" x="128" y="82" font-size="27" font-weight="700" fill="#0b0b0c" letter-spacing="-0.5">TythanAI</text>
+
+    <!-- eyebrow pill -->
+    <g transform="translate(64,120)">
+      <rect x="0" y="0" width="252" height="30" rx="15" fill="#ffffff" stroke="#e0ded8"/>
+      <circle cx="20" cy="15" r="4" fill="#0b0b0c"/>
+      <text class="sans" x="34" y="20" font-size="12" font-weight="600" fill="#3a3a3c" letter-spacing="2.2">AI SECURITY PLATFORM</text>
+    </g>
+
+    <!-- headline -->
+    <text class="sans" x="62" y="212" font-size="46" font-weight="800" fill="#0b0b0c" letter-spacing="-1.5">Enterprise-grade</text>
+    <text class="sans" x="62" y="262" font-size="46" font-weight="800" letter-spacing="-1.5"><tspan fill="#0b0b0c">security, </tspan><tspan fill="#a7a5a0">open.</tspan></text>
+
+    <!-- subline -->
+    <text class="sans" x="64" y="298" font-size="15.5" fill="#54524e">SAST &#183; SCA &#183; Secrets &#183; IaC &#183; Web3 &#8212; one CLI, no account, no telemetry.</text>
+
+    <!-- terminal prompt -->
+    <g transform="translate(64,320)">
+      <rect x="0" y="0" width="470" height="40" rx="10" fill="#0d0d10"/>
+      <text class="mono" x="16" y="25" font-size="14"><tspan fill="#41d18a">$</tspan><tspan fill="#d6d6db"> tythanai scan ./your-project</tspan></text>
+      <rect class="caret" x="298" y="13" width="8" height="16" fill="#d6d6db"/>
+    </g>
+
+    <!-- ── RIGHT: signature code card ───────────────────────────────────── -->
+    <rect x="640" y="70" width="500" height="286" rx="14" fill="#0d0d10" stroke="#26262b"/>
+    <!-- card header -->
+    <text class="mono" x="664" y="100" font-size="14" fill="#e7e7ea">&#128462; users.py</text>
+    <g transform="translate(1030,86)">
+      <rect x="0" y="0" width="86" height="26" rx="13" fill="#3a1417" stroke="#e5484d" stroke-opacity="0.5"/>
+      <circle cx="17" cy="13" r="4" fill="#e5484d"/>
+      <text class="sans" x="28" y="17" font-size="12" font-weight="600" fill="#ff8a8a">Critical</text>
+    </g>
+    <text class="mono" x="664" y="122" font-size="11.5" fill="#6b6b73">app / handlers / users.py</text>
+    <line x1="640" y1="134" x2="1140" y2="134" stroke="#26262b"/>
+
+    <g clip-path="url(#codeclip)">
+      <!-- code lines -->
+      <text class="mono" font-size="13.5" fill="#d6d6db">
+        <tspan x="678" y="160" fill="#5b5b63">78</tspan><tspan x="712" fill="#c9a9ff">def </tspan><tspan fill="#8ec7ff">get_user</tspan><tspan fill="#d6d6db">(id):</tspan>
+      </text>
+      <!-- vulnerable line, highlighted -->
+      <g class="vuln">
+        <rect x="640" y="168" width="500" height="22" fill="#e5484d" fill-opacity="0.12"/>
+        <rect x="640" y="168" width="3" height="22" fill="#e5484d"/>
+        <text class="mono" font-size="13.5">
+          <tspan x="678" y="184" fill="#5b5b63">79</tspan><tspan x="730" fill="#d6d6db">query = </tspan><tspan fill="#ff7a7a">f"SELECT * FROM users WHERE id = {id}"</tspan>
+        </text>
+      </g>
+      <text class="mono" font-size="13.5">
+        <tspan x="678" y="208" fill="#5b5b63">80</tspan><tspan x="730" fill="#d6d6db">result = db.execute(query)</tspan>
+      </text>
+      <text class="mono" font-size="13.5">
+        <tspan x="678" y="232" fill="#5b5b63">81</tspan><tspan x="730" fill="#c9a9ff">return</tspan><tspan fill="#d6d6db"> result.fetchall()</tspan>
+      </text>
+
+      <!-- AI fix reveal -->
+      <g class="fix">
+        <rect x="662" y="250" width="456" height="92" rx="10" fill="#0e1a12" stroke="#1f5138"/>
+        <text class="sans" x="678" y="272" font-size="12" font-weight="700" fill="#41d18a">AI ANALYSIS &#183; RECOMMENDED FIX</text>
+        <text class="mono" x="678" y="298" font-size="12.5"><tspan fill="#8fe3b6">query = </tspan><tspan fill="#d6d6db">"SELECT * FROM users WHERE id = ?"</tspan></text>
+        <text class="mono" x="678" y="318" font-size="12.5"><tspan fill="#8fe3b6">result = db.execute(</tspan><tspan fill="#d6d6db">query, (id,)</tspan><tspan fill="#8fe3b6">)</tspan></text>
+        <text class="mono" x="1102" y="336" font-size="10.5" fill="#4c8f6b" text-anchor="end">confidence 98%</text>
+      </g>
+
+      <!-- scan sweep -->
+      <rect class="sweep" x="640" y="140" width="500" height="70" fill="url(#scan)"/>
+    </g>
+  </g>
+</svg>

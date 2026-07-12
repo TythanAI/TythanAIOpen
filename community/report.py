@@ -16,7 +16,7 @@ from typing import Any, List
 from community.gates import UPGRADE_URL
 from community.scanner import ScanResult
 
-_VERSION = "1.0.0"
+_VERSION = "1.1.0"
 
 # ─── SARIF ────────────────────────────────────────────────────────────────────
 

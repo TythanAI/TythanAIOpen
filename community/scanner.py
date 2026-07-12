@@ -207,17 +207,19 @@ class CommunityScanner:
         rule_cap = COMMUNITY_LIMITS["web3_rules_per_chain"]
         findings: List[dict] = []
 
-        # TON (FunC / Tolk)
+        # TON (FunC / Tolk) + Solidity/EVM via the unified contract auditor.
+        # Label each finding by its rule prefix (SC-TON-* → ton, SC-SOL-* → evm)
+        # instead of hard-coding the chain — a .sol reentrancy is not a TON issue.
         try:
             from blockchain.smart_contract_auditor import SmartContractAuditor
             auditor = SmartContractAuditor()
-            ton = [
-                _normalise(f, source="web3:ton")
+            contract = [
+                _normalise(f, source=_web3_source(f))
                 for f in _extract(auditor.audit_directory(self.target))
             ]
-            findings.extend(ton[: rule_cap * 2])  # TON is the wedge — show more
+            findings.extend(contract[: rule_cap * 2])  # Web3 is the wedge — show more
         except Exception as exc:
-            self._result.errors.append(f"Web3/TON: {exc}")
+            self._result.errors.append(f"Web3/Contracts: {exc}")
 
         # Solidity (EVM)
         try:
@@ -257,9 +259,9 @@ class CommunityScanner:
         ai_fix: bool,
     ) -> None:
         always_gated = [
-            "cpg_taint", "ai_fix", "rules_marketplace", "saas_dashboard",
-            "webhooks", "economic_risk", "sbom_compliance", "full_ruleset",
-            "multi_agent",
+            "ai_fix", "autopr", "ci_gates", "reachability", "cpg_taint",
+            "full_ruleset", "economic_risk", "sbom_compliance",
+            "integrations", "saas_dashboard",
         ]
         for key in always_gated:
             self._result.gated_features.append(gate(key))
@@ -272,6 +274,25 @@ class CommunityScanner:
 
 
 # ─── Extraction + normalisation helpers ───────────────────────────────────────
+
+def _web3_source(finding: Any) -> str:
+    """Derive a chain-accurate source label from a contract finding's rule id.
+
+    The unified contract auditor emits both TON (SC-TON-*) and Solidity/EVM
+    (SC-SOL-*) findings; SC-COM-* rules (e.g. hardcoded key) are chain-agnostic.
+    """
+    rid = ""
+    if hasattr(finding, "rule_id"):
+        rid = str(getattr(finding, "rule_id") or "")
+    elif isinstance(finding, dict):
+        rid = str(finding.get("rule_id") or finding.get("id") or "")
+    rid = rid.upper()
+    if "SC-TON" in rid:
+        return "web3:ton"
+    if "SC-SOL" in rid:
+        return "web3:evm"
+    return "web3"
+
 
 def _extract(result: Any) -> List[Any]:
     """

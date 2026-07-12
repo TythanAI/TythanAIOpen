@@ -17,7 +17,7 @@ development environment, run the tests, and submit pull requests.
 
 ```bash
 git clone https://github.com/TythanAI/TythanAIOpen.git
-cd TythanAI
+cd TythanAIOpen
 
 # Create a virtual environment
 python3 -m venv .venv
@@ -115,5 +115,6 @@ A clean, squash-merged history is preferred, and all CI checks must be green.
 - For security vulnerabilities, **do not** open a public issue — see [SECURITY.md](SECURITY.md).
 
 > Looking for advanced capabilities (full rule library, deep Web3 analysis,
-> AutoPR, SaaS/CI integrations)? Those are part of TythanAI Pro / Enterprise —
-> see the comparison in the [README](README.md#community-vs-pro--enterprise).
+> AI triage & fix, AutoPR, SaaS/CI integrations)? Those are part of TythanAI
+> Pro ($39/dev/mo) / Enterprise — see the comparison in the
+> [README](README.md#community-vs-pro).

@@ -31,9 +31,9 @@ from community.gates import (
 class TestGates:
     def test_all_premium_keys_present(self):
         expected = {
-            "autopr", "dast", "cpg_taint", "ai_fix", "rules_marketplace",
-            "saas_dashboard", "webhooks", "economic_risk", "sbom_compliance",
-            "p2p_consensus", "full_ruleset", "code_quality_adv", "multi_agent",
+            "ai_fix", "autopr", "ci_gates", "reachability", "cpg_taint",
+            "dast", "full_ruleset", "economic_risk", "sbom_compliance",
+            "integrations", "saas_dashboard", "multi_agent",
         }
         assert expected.issubset(set(PREMIUM_FEATURES.keys()))
 

@@ -19,4 +19,4 @@ Open a pull request. See [CONTRIBUTING.md](CONTRIBUTING.md). There is no formal 
 
 General questions: open a GitHub Discussion.  
 Security issues: see [SECURITY.md](SECURITY.md).  
-Commercial enquiries: legal@tythanai.com
+Commercial enquiries: legal@tythanai.io

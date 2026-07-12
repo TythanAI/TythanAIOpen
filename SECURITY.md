@@ -2,7 +2,7 @@
 
 **Do not open a public GitHub issue for security vulnerabilities.**
 
-Email **security@tythanai.com** with:
+Email **security@tythanai.io** with:
 - Description of the issue and affected component
 - Steps to reproduce or proof-of-concept (if safe to share)
 - Potential impact assessment

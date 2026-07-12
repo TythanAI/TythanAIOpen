@@ -20,18 +20,19 @@ Priorities may shift based on user feedback.
 - Honest public benchmark on the Juliet corpus
 - More example CI integrations
 
-## Pro / Enterprise
+## Pro ($39/dev/mo) & Enterprise
 
 Advanced capabilities are available in the commercial editions (for teams and audit firms):
 
-- Full rule library (3,400+) and deep Web3 analysis (symbolic execution, formal checks)
-- Full CPG taint analysis (Go / Java / Rust)
-- AutoPR auto-generated fix pull requests, AI-powered fix suggestions
-- DAST, SBOM compliance (SPDX / CycloneDX)
-- SaaS dashboard, webhooks, multi-agent orchestration, GitHub App
+- Full rule library and deep Web3 analysis (symbolic execution, formal checks)
+- Inter-procedural CPG taint analysis (Go / Java / Rust)
+- AI triage & fix suggestions, AutoPR auto-generated fix pull requests
+- Dependency reachability analysis, managed CI/CD gates on every PR
+- DAST, SBOM & compliance reports (SPDX / CycloneDX)
+- SaaS dashboard, webhooks, Slack & Jira integration
 - Priority support & SLA
 
-See the comparison table in the [README](README.md#community-vs-pro--enterprise).
+See the comparison table in the [README](README.md#community-vs-pro).
 
 ## Not planned
 

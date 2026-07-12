@@ -1,71 +1,112 @@
-# TythanAI — Community Edition
+<!-- Banner -->
+<p align="center">
+  <a href="https://tythanai.io">
+    <img src="./.github/assets/banner.svg" alt="TythanAI Community Edition — enterprise-grade code security, now open" width="100%">
+  </a>
+</p>
 
-**Open-source security scanner with native Web3 auditing for TON, Solana, CosmWasm and Solidity — alongside SAST, SCA, secrets and IaC. One CLI. No account. No telemetry.**
+<h1 align="center">TythanAI — Community Edition</h1>
 
-[![PyPI](https://img.shields.io/pypi/v/tythanai-community?color=brightgreen)](https://pypi.org/project/tythanai-community/)
-[![License: BSL 1.1](https://img.shields.io/badge/License-BSL%201.1-orange.svg)](LICENSE)
-[![Python](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/)
-[![PRs welcome](https://img.shields.io/badge/PRs-welcome-blueviolet.svg)](CONTRIBUTING.md)
+<p align="center">
+  <strong>An open, Web3-native security scanner.</strong><br>
+  SAST · SCA · Secrets · IaC — plus first-class auditing for <strong>TON, Solidity/EVM, Solana &amp; CosmWasm</strong>.<br>
+  One CLI. No account. No telemetry. Nothing leaves your machine.
+</p>
+
+<p align="center">
+  <a href="LICENSE"><img alt="License: BSL 1.1" src="https://img.shields.io/badge/license-BSL%201.1-0b0b0c.svg"></a>
+  <a href="https://www.python.org/"><img alt="Python 3.10+" src="https://img.shields.io/badge/python-3.10%2B-3776ab.svg"></a>
+  <img alt="Engines" src="https://img.shields.io/badge/engines-SAST%20%C2%B7%20SCA%20%C2%B7%20Secrets%20%C2%B7%20IaC%20%C2%B7%20Web3-41d18a.svg">
+  <img alt="Privacy" src="https://img.shields.io/badge/telemetry-none-2ea043.svg">
+  <a href="CONTRIBUTING.md"><img alt="PRs welcome" src="https://img.shields.io/badge/PRs-welcome-8250df.svg"></a>
+</p>
+
+<p align="center">
+  <a href="#quick-start">Quick start</a> ·
+  <a href="#whats-in-the-community-edition">What's included</a> ·
+  <a href="#community-vs-pro">Community vs Pro</a> ·
+  <a href="#how-it-compares">How it compares</a> ·
+  <a href="#transparency--benchmarks">Transparency</a>
+</p>
 
 ---
 
+## Quick start
+
 ```bash
+# From PyPI
 pip install tythanai-community
 tythanai scan ./your-project
 ```
 
-That's it. No sign-up, no API key, no data leaves your machine.
+```bash
+# …or from source (always current)
+git clone https://github.com/TythanAI/TythanAIOpen.git
+cd TythanAIOpen
+pip install -e .
+tythanai scan ./your-project
+```
+
+That's it. No sign-up, no API key, no data leaves your machine. The scanner
+exits non-zero when it finds something, so it drops straight into CI.
 
 ---
 
 ## See it in action
 
-Point it at a folder and it tells you what's actually exploitable *(example output)*:
+Point it at a folder and it streams findings from every engine — secrets,
+dependencies, IaC, and native Web3 — with a file:line and the engine that
+caught it:
 
-```
-  ______      __  __               ___    ____
- /_  __/_  __/ /_/ /_  ____ ____  /   |  /  _/
-  / / / / / / __/ __ \/ __ `/ _ \/ /| |  / /
- / / / /_/ / /_/ / / / /_/ /  __/ ___ |_/ /
-/_/  \__, /\__/_/ /_/\__,_/\___/_/  |_/___/
-    /____/   Community Edition  v1.0
+<p align="center">
+  <img src="./.github/assets/scan-demo.svg" alt="tythanai scan streaming real findings" width="90%">
+</p>
 
-  Scanning ./your-project …
-
+```text
   FINDINGS
 
-    1  CRITICAL  AWS secret exposed in source code
-        app.py:3
-        SEC-AWS_ACCESS_KEY  [secret_detector]
+    1  CRITICAL  AWS access key exposed in source code
+          app.py:2                       SEC-AWS_ACCESS_KEY   [secrets]
 
     2  CRITICAL  Potential reentrancy: state written after external call
-        Vault.sol:6
-        SC-SOL-001  [web3]
+          Vault.sol:5                    SC-SOL-001           [web3:evm]
 
-    3  HIGH      Low-level .call() return value not checked — silent failure
-        Vault.sol:6
-        SOL005  [solidity_scanner]
+    3  HIGH      Unchecked low-level .call() return value — silent failure
+          Vault.sol:5                    SOL005               [solidity]
+
+    4  HIGH      No sender-address validation (gas-drain risk)
+          main.fc:1                      SC-TON-001           [web3:ton]
+
+    5  HIGH      S3 bucket missing server-side encryption
+          main.tf                        IAC-TF-001           [iac]
+
+    6  MEDIUM    requests 2.19.0 — sensitive headers leaked on redirect
+          requirements.txt               CVE-2023-32681       [sca]
 
   SCAN SUMMARY
-  Risk      : CRITICAL (95/100)
-  Findings  : 5    (CRITICAL 3 · HIGH 2)
+  Risk      : CRITICAL (100/100)
+  Findings  : 12   (CRITICAL 3 · HIGH 6 · MEDIUM 3)
 ```
 
 ---
 
-## What's included in Community Edition
+## What's in the Community Edition
 
-Everything below runs locally, free, with no account:
+Everything below runs **locally, free, with no account**:
 
-- 🪙 **Web3 auditing** — core security checks for **TON FunC/Tolk**, **Solidity/EVM**, **Solana/Anchor** and **CosmWasm** (reentrancy, signer checks, replay, unchecked calls, access control…)
-- 🔍 **SAST** — Semgrep + a curated rule set across common languages (Python, JS/TS, Java, Go, Rust, PHP, Ruby)
-- 📦 **SCA** — dependency CVEs via OSV.dev with EPSS exploit-probability ranking, plus an offline fallback
-- 🔑 **Secrets** — API keys, tokens and private keys detected in your source
-- ☁️ **IaC** — Terraform, Kubernetes and CloudFormation misconfigurations
-- 📄 **Reports** — SARIF 2.1.0 (GitHub Code Scanning), JSON and HTML
-- 🔒 **Private by design** — fully local, no account, no telemetry
+| Engine | What it does |
+|--------|--------------|
+| 🪙 **Web3 audit** | Native static checks for **TON (FunC/Tolk)**, **Solidity/EVM**, **Solana/Anchor** and **CosmWasm** — reentrancy, unchecked low-level calls, missing sender validation, gas-drain, weak randomness, `tx.origin` auth, unprotected `selfdestruct`, hardcoded keys, and more. |
+| 🔍 **SAST** | Source analysis for Python, JS/TS, Java, Go, Rust, PHP, Ruby and C/C++ via [Semgrep](https://semgrep.dev), normalised into one finding format with CWE/OWASP enrichment. |
+| 📦 **SCA** | Dependency CVEs from **[OSV.dev](https://osv.dev)** with EPSS exploit-probability ranking, and an offline known-CVE fallback so you still get results with no network. |
+| 🔑 **Secrets** | **40+ secret patterns across 27 providers** (AWS, GCP, GitHub, Stripe, Slack, database URIs, private keys, crypto wallets…) plus entropy analysis. |
+| ☁️ **IaC** | Terraform, Kubernetes and CloudFormation misconfiguration checks (public buckets, open security groups, missing encryption…). |
+| 📄 **Reports** | **SARIF 2.1.0** (for GitHub Code Scanning), plus **JSON** and a self-contained **HTML** report. |
+| 🔒 **Private by design** | Fully local. No account, no phone-home, no telemetry. |
 
-> Community Edition is a fast, practical scanner that catches the most common, highest-impact issues. Deeper analysis (full rule library, symbolic/formal Web3 analysis, auto-fix PRs, CI integrations) lives in **Pro / Enterprise** — see the table below.
+> The Community Edition is a fast, practical scanner that catches the most common,
+> highest-impact issues. Deeper analysis — inter-procedural taint, symbolic/formal
+> Web3 checks, AI triage, and auto-fix PRs — lives in **Pro**. See the table below.
 
 ---
 
@@ -75,19 +116,20 @@ Everything below runs locally, free, with no account:
 # Scan everything
 tythanai scan ./myproject
 
-# Only the checks you want
-tythanai scan ./myproject --no-sast --no-sca   # e.g. secrets + IaC + web3 only
+# Run only the engines you want (skip the rest)
+tythanai scan ./myproject --no-sast --no-sca      # e.g. secrets + IaC + Web3 only
 
 # Machine-readable output
 tythanai scan ./myproject --sarif results.sarif   # upload to GitHub Code Scanning
 tythanai scan ./myproject --json  report.json
 tythanai scan ./myproject --html  report.html
 
-# Quiet mode (findings + summary only, no banner)
+# Quiet mode — findings + summary only, no banner
 tythanai scan ./myproject --quiet
 ```
 
-Exit code is non-zero when findings are present, so it drops straight into CI.
+**Exit codes** map to risk, so CI fails on real problems:
+`0` clean · `1` low · `2` medium · `3` high/critical.
 
 ### GitHub Actions
 
@@ -108,57 +150,126 @@ jobs:
 
 ---
 
-## Community vs Pro / Enterprise
+## Community vs Pro
 
-Community Edition is genuinely useful on its own. Teams shipping production smart contracts — and audit firms — upgrade for depth, automation and support.
+The Community Edition is genuinely useful on its own. Teams shipping production
+smart contracts — and audit firms — upgrade to **Pro** for depth, automation and
+support.
 
-| Capability | Community (free) | Pro / Enterprise |
-|---|:--:|:--:|
-| TON / Solidity / Solana / CosmWasm auditing | Core checks | **Full rule set + deep analysis** |
-| Web3 symbolic execution & formal checks | — | ✓ |
-| SAST rule library | up to 500 rules | **3,400+ rules** |
-| Full CPG taint analysis (Go / Java / Rust) | — | ✓ |
-| SCA (OSV.dev + EPSS) | ✓ | ✓ |
-| Secrets & IaC | ✓ | ✓ |
-| AutoPR — auto-generated fix pull requests | — | ✓ |
-| AI-powered fix suggestions | — | ✓ |
-| DAST (active web scanning) | — | ✓ |
-| SBOM compliance (SPDX / CycloneDX) | — | ✓ |
-| SaaS dashboard, webhooks, multi-agent orchestration | — | ✓ |
-| Priority support & SLA | — | ✓ |
-| Reports | SARIF · JSON · HTML | + SBOM · compliance |
+<table>
+<tr>
+  <th align="left">Capability</th>
+  <th align="center">Community<br><sub>free · BSL 1.1</sub></th>
+  <th align="center">Pro<br><sub><strong>$39</strong> / dev / mo</sub></th>
+</tr>
+<tr><td>Local CLI — SAST · SCA · Secrets · IaC · Web3</td><td align="center">✅</td><td align="center">✅</td></tr>
+<tr><td>Repositories</td><td align="center">Unlimited (local)</td><td align="center">Unlimited (managed)</td></tr>
+<tr><td>Web3 rule packs (TON · Solidity · Solana · CosmWasm)</td><td align="center">Core checks</td><td align="center">Full set + deep analysis</td></tr>
+<tr><td>Reports</td><td align="center">SARIF · JSON · HTML</td><td align="center">+ SBOM · compliance</td></tr>
+<tr><td>GitHub Actions (SARIF upload)</td><td align="center">✅ self-hosted</td><td align="center">✅</td></tr>
+<tr><td>CI/CD gates on every pull request</td><td align="center">—</td><td align="center">✅</td></tr>
+<tr><td>AI triage &amp; fix suggestions</td><td align="center">—</td><td align="center">✅</td></tr>
+<tr><td>Auto-fix pull requests (AutoPR)</td><td align="center">—</td><td align="center">✅</td></tr>
+<tr><td>Dependency reachability analysis</td><td align="center">—</td><td align="center">✅</td></tr>
+<tr><td>Inter-procedural CPG taint (Go · Java · Rust)</td><td align="center">—</td><td align="center">✅</td></tr>
+<tr><td>DAST — active web scanning</td><td align="center">—</td><td align="center">✅</td></tr>
+<tr><td>Slack &amp; Jira integration</td><td align="center">—</td><td align="center">✅</td></tr>
+<tr><td>SaaS dashboard, webhooks, team roles</td><td align="center">—</td><td align="center">✅</td></tr>
+<tr><td>Support</td><td align="center">Community (issues)</td><td align="center">Priority + SLA</td></tr>
+</table>
 
-**Need Pro or Enterprise?** TythanAI Pro is built for teams and audit firms running TON / Solana / Solidity engagements. To request access or a demo, [open an issue](https://github.com/TythanAI/TythanAIOpen/issues/new) or visit [tythanai.io](https://tythanai.io).
+<p align="center"><strong>Pro is $39 / developer / month.</strong> Start a free trial or book a demo at <a href="https://tythanai.io/pricing">tythanai.io/pricing</a>.</p>
 
 ---
 
-## How Community Edition compares
+## How it compares
 
-| | TythanAI CE | Semgrep OSS | Slither | Snyk |
-|---|:--:|:--:|:--:|:--:|
-| SAST | ✓ | ✓ | ✗ | partial |
-| SCA (OSV.dev) | ✓ | ✗ | ✗ | ✓ |
-| Secrets | ✓ | partial | ✗ | ✓ |
-| Solidity / EVM | ✓ | ✗ | ✓ | ✗ |
-| **TON FunC / Tolk** | ✓ | ✗ | ✗ | ✗ |
-| **Solana / Anchor** | ✓ | ✗ | ✗ | ✗ |
-| **CosmWasm** | ✓ | ✗ | ✗ | ✗ |
-| SARIF output | ✓ | partial | ✗ | partial |
-| No account required | ✓ | ✓ | ✓ | ✗ |
+### Against open-source scanners
+
+Most teams reach for a different tool per language and per concern. TythanAI CE
+is one scanner that covers all of them — and it's the only free tool that audits
+TON, Solana and CosmWasm alongside Solidity.
+
+| | **TythanAI CE** | Semgrep OSS | Slither | Gitleaks | Trivy |
+|---|:--:|:--:|:--:|:--:|:--:|
+| SAST | ✅ | ✅ | — | — | — |
+| SCA (OSV.dev + EPSS) | ✅ | — | — | — | ✅ |
+| Secrets | ✅ | ◐ | — | ✅ | ✅ |
+| IaC | ✅ | ◐ | — | — | ✅ |
+| Solidity / EVM | ✅ | — | ✅ | — | — |
+| **TON (FunC / Tolk)** | ✅ | — | — | — | — |
+| **Solana / Anchor** | ✅ | — | — | — | — |
+| **CosmWasm** | ✅ | — | — | — | — |
+| SARIF output | ✅ | ✅ | ◐ | ✅ | ✅ |
+| One tool, all of the above | ✅ | — | — | — | ◐ |
+| No account · no telemetry | ✅ | ✅ | ✅ | ✅ | ✅ |
+
+<sub>✅ built-in · ◐ partial / add-on · — not covered</sub>
+
+### The full platform, against the incumbents
+
+The same engine that powers the Community Edition scales into the commercial
+platform. Here's how TythanAI stands against the tools it's most often compared
+to — with the rows that ship **free in Community** marked.
+
+| Capability | **TythanAI** | Semgrep | CodeQL | Snyk | Veracode |
+|------------|:--:|:--:|:--:|:--:|:--:|
+| Multi-chain Web3 audit (TON/Solana/CosmWasm/EVM) | ✅ <sub>core free</sub> | — | — | — | — |
+| Inter-procedural taint (CPG) | ✅ <sub>Pro</sub> | ◐ | ✅ | — | ◐ |
+| SCA — OSV.dev + EPSS | ✅ <sub>free</sub> | — | — | ✅ | ◐ |
+| Secrets detection | ✅ <sub>free</sub> | ◐ | — | ✅ | — |
+| IaC misconfiguration | ✅ <sub>free</sub> | ◐ | — | ✅ | ✅ |
+| AI triage &amp; fix | ✅ <sub>Pro</sub> | — | — | ◐ | — |
+| Autonomous fix PRs | ✅ <sub>Pro</sub> | — | — | ◐ | — |
+| DAST correlation | ✅ <sub>Pro</sub> | — | — | — | ✅ |
+| SARIF / GitHub Code Scanning | ✅ <sub>free</sub> | ◐ | ✅ | ◐ | ◐ |
+| Self-hosted, no account | ✅ <sub>free</sub> | ✅ | ✅ | — | — |
+| No telemetry (fully local) | ✅ <sub>free</sub> | ✅ | ◐ | — | — |
+
+<sub>Comparison reflects each tool's core/default offering; every vendor has add-ons. Trademarks belong to their respective owners and are used for identification only.</sub>
+
+---
+
+## Transparency &amp; benchmarks
+
+We'd rather show you an honest coverage map than a marketing number.
+
+On a vendored **OWASP-patterned corpus** (62 cases, per-case ground truth,
+no network), the TythanAI static engine scores:
+
+| Scope | Recall (TPR) | False-positive rate | Notes |
+|-------|:---:|:---:|-------|
+| **Injection classes we model** (SQLi, command, SSRF, XSS, deserialization, path traversal, code-injection) | **81.8%** | **0.0%** | The taint model's core competency |
+| **All categories** | 29.0% | **0.0%** | Weak-crypto, logging and access-control classes are *outside* the taint model and honestly score 0% |
+
+The headline is the **zero false-positive rate across the whole corpus** — a
+finding you can act on, not noise you have to triage. When we don't model a
+vulnerability class, we say so rather than paper over it.
+
+> **Scope note.** These numbers describe the platform's inter-procedural taint
+> engine, which is a **Pro** capability. The Community Edition ships the
+> rule-based engines above (Web3, secrets, SCA, IaC, and Semgrep-powered SAST).
+> The CE codebase has its own test suite — run `pytest tests/ -v` (53 tests).
 
 ---
 
 ## Requirements
 
-- Python 3.10+
-- Optional: [Semgrep](https://semgrep.dev) (`pip install semgrep`) for the full SAST rule set
+- **Python 3.10+**
+- SAST uses [Semgrep](https://semgrep.dev); it's installed automatically with the
+  package. SCA calls [OSV.dev](https://osv.dev) when online and falls back to a
+  bundled CVE set when offline.
 
 ---
 
 ## Contributing
 
-Issues, rules and chain auditors are very welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
-Found a security bug? See [SECURITY.md](SECURITY.md).
+New rules, chain auditors and false-positive fixes are very welcome — see
+[CONTRIBUTING.md](CONTRIBUTING.md). Found a security bug? See [SECURITY.md](SECURITY.md).
+
+The Web3 auditors live in [`blockchain/`](blockchain) and
+[`scanners/`](scanners); the scan pipeline and feature gates are in
+[`community/`](community).
 
 If TythanAI saved you from shipping a vulnerability, a ⭐ helps other people find it.
 
@@ -166,4 +277,9 @@ If TythanAI saved you from shipping a vulnerability, a ⭐ helps other people fi
 
 ## License
 
-[Business Source License 1.1](LICENSE) — source-available, free for non-production and evaluation use; converts to Apache 2.0 on 2029-06-01.
+[Business Source License 1.1](LICENSE) — source-available; free for
+non-production, evaluation and personal use, and for organisations with three or
+fewer developers. Converts to **Apache 2.0 on 2029-06-01**. For commercial terms,
+see [tythanai.io/pricing](https://tythanai.io/pricing).
+
+<p align="center"><sub>© 2026 TythanAI Labs · <a href="https://tythanai.io">tythanai.io</a></sub></p>

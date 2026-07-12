@@ -19,7 +19,7 @@ We as contributors and maintainers pledge to make participation in TythanAI a ha
 
 ## Enforcement
 
-Instances of unacceptable behaviour may be reported to **conduct@tythanai.com**. All complaints will be reviewed and investigated promptly and fairly. Maintainers who do not follow the Code of Conduct may face temporary or permanent repercussions.
+Instances of unacceptable behaviour may be reported to **conduct@tythanai.io**. All complaints will be reviewed and investigated promptly and fairly. Maintainers who do not follow the Code of Conduct may face temporary or permanent repercussions.
 
 ## Attribution
 
