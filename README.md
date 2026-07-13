@@ -97,7 +97,7 @@ Everything below runs **locally, free, with no account**:
 | Engine | What it does |
 |--------|--------------|
 | 🪙 **Web3 audit** | Native static checks for **TON (FunC/Tolk)**, **Solidity/EVM**, **Solana/Anchor** and **CosmWasm** — reentrancy, unchecked low-level calls, missing sender validation, gas-drain, weak randomness, `tx.origin` auth, unprotected `selfdestruct`, hardcoded keys, and more. |
-| 🔍 **SAST** | Source analysis for Python, JS/TS, Java, Go, Rust, PHP, Ruby and C/C++ via [Semgrep](https://semgrep.dev), normalised into one finding format with CWE/OWASP enrichment. |
+| 🔍 **SAST** | A **built-in, offline rule engine** flags weak crypto, unsafe deserialization, disabled TLS verification, `eval`/`exec`, command injection and dynamic SQL in Python and JS/TS — no external tools, no network. Add [Semgrep](https://semgrep.dev) for extra breadth across Java, Go, Rust, PHP, Ruby and C/C++, normalised into the same finding format. |
 | 📦 **SCA** | Dependency CVEs from **[OSV.dev](https://osv.dev)** with EPSS exploit-probability ranking, and an offline known-CVE fallback so you still get results with no network. |
 | 🔑 **Secrets** | **40+ secret patterns across 27 providers** (AWS, GCP, GitHub, Stripe, Slack, database URIs, private keys, crypto wallets…) plus entropy analysis. |
 | ☁️ **IaC** | Terraform, Kubernetes and CloudFormation misconfiguration checks (public buckets, open security groups, missing encryption…). |
@@ -232,33 +232,42 @@ to — with the rows that ship **free in Community** marked.
 
 ## Transparency &amp; benchmarks
 
-We'd rather show you an honest coverage map than a marketing number.
+We'd rather show you an honest coverage map than a marketing number. The
+built-in SAST engine ships with a labelled corpus of vulnerable/secure pairs
+([`benchmarks/community_corpus.py`](benchmarks/community_corpus.py)) so the
+numbers below are **reproducible from source**:
 
-On a vendored **OWASP-patterned corpus** (62 cases, per-case ground truth,
-no network), the TythanAI static engine scores:
+```bash
+python -m benchmarks.measure
+```
 
-| Scope | Recall (TPR) | False-positive rate | Notes |
-|-------|:---:|:---:|-------|
-| **Injection classes we model** (SQLi, command, SSRF, XSS, deserialization, path traversal, code-injection) | **81.8%** | **0.0%** | The taint model's core competency |
-| **All categories** | 29.0% | **0.0%** | Weak-crypto, logging and access-control classes are *outside* the taint model and honestly score 0% |
+| Scope | Recall (TPR) | False positives |
+|-------|:---:|:---:|
+| **Modelled weakness classes** — weak crypto, unsafe deserialization, TLS-off, `eval`/`exec`, command injection, dynamic SQL, XSS/SSTI (7 CWE classes) | **100%** (25/25) | **0%** |
+| **Overall, incl. out-of-model taint classes** | **83.3%** (25/30) | **0%** |
 
-The headline is the **zero false-positive rate across the whole corpus** — a
-finding you can act on, not noise you have to triage. When we don't model a
-vulnerability class, we say so rather than paper over it.
+Two things we do on purpose:
 
-> **Scope note.** These numbers describe the platform's inter-procedural taint
-> engine, which is a **Pro** capability. The Community Edition ships the
-> rule-based engines above (Web3, secrets, SCA, IaC, and Semgrep-powered SAST).
-> The CE codebase has its own test suite — run `pytest tests/ -v` (53 tests).
+- **Zero false positives across the whole corpus** — a finding you act on, not
+  noise you triage.
+- **We name our blind spots.** Path traversal, SSRF, SQL assembled across
+  statements, insecure randomness and XXE need inter-procedural data-flow
+  (taint) tracking — that's the **Pro** CPG engine. The rule engine honestly
+  scores 0% on those rather than guessing.
+
+> The corpus is maintained in-repo alongside the rules — authoring is disclosed,
+> not hidden. The Community Edition also carries a full unit-test suite:
+> `pytest tests/ -v` (**83 tests**).
 
 ---
 
 ## Requirements
 
-- **Python 3.10+**
-- SAST uses [Semgrep](https://semgrep.dev); it's installed automatically with the
-  package. SCA calls [OSV.dev](https://osv.dev) when online and falls back to a
-  bundled CVE set when offline.
+- **Python 3.10+** — the built-in SAST engine, secrets, IaC and Web3 auditors
+  run with **no other dependencies and no network**.
+- Optional: [Semgrep](https://semgrep.dev) (installed with the package) widens
+  SAST language coverage; [OSV.dev](https://osv.dev) is queried for live CVEs
+  when online, with a bundled offline CVE set as fallback.
 
 ---
 

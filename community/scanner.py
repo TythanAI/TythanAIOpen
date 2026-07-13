@@ -131,6 +131,22 @@ class CommunityScanner:
     # ── SAST ──────────────────────────────────────────────────────────────────
 
     def _run_sast(self) -> None:
+        findings: List[dict] = []
+
+        # Built-in offline engine — always runs, no external tool or network.
+        # Guarantees SAST results (weak crypto, unsafe deserialization, TLS-off,
+        # eval/exec, command injection, dynamic SQL) even without Semgrep.
+        try:
+            from scanners.code_weakness_scanner import CodeWeaknessScanner
+            builtin = CodeWeaknessScanner(max_files=COMMUNITY_LIMITS["max_files"])
+            findings.extend(
+                _normalise(f, source="sast") for f in builtin.scan_directory(self.target)
+            )
+        except Exception as exc:
+            self._result.errors.append(f"SAST(builtin): {exc}")
+            logger.debug("builtin SAST error: %s", exc, exc_info=True)
+
+        # Semgrep — adds breadth (more languages/rules) when installed. Optional.
         try:
             from scanners.semgrep_integration import SemgrepScanner
             scanner = SemgrepScanner()
@@ -138,12 +154,12 @@ class CommunityScanner:
                 self.target,
                 max_findings=COMMUNITY_LIMITS["max_rules"],
             )
-            self._result.sast_findings = [
-                _normalise(f, source="sast") for f in _extract(result)
-            ]
+            findings.extend(_normalise(f, source="sast") for f in _extract(result))
         except Exception as exc:
-            self._result.errors.append(f"SAST: {exc}")
-            logger.debug("SAST error: %s", exc, exc_info=True)
+            self._result.errors.append(f"SAST(semgrep): {exc}")
+            logger.debug("semgrep error: %s", exc, exc_info=True)
+
+        self._result.sast_findings = _dedup_findings(findings)
 
     # ── SCA (OSV.dev) ─────────────────────────────────────────────────────────
 
@@ -274,6 +290,28 @@ class CommunityScanner:
 
 
 # ─── Extraction + normalisation helpers ───────────────────────────────────────
+
+def _dedup_findings(findings: List[dict]) -> List[dict]:
+    """Collapse duplicate findings on the same weakness at the same location.
+
+    The built-in engine and Semgrep can both flag the same issue; we key on
+    (CWE-or-title, file, line) so cross-engine duplicates merge while genuinely
+    distinct findings on one line are kept.
+    """
+    seen: set = set()
+    out: List[dict] = []
+    for f in findings:
+        key = (
+            str(f.get("cwe") or f.get("title") or f.get("rule_id")),
+            str(f.get("file", "")),
+            str(f.get("line", "")),
+        )
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(f)
+    return out
+
 
 def _web3_source(finding: Any) -> str:
     """Derive a chain-accurate source label from a contract finding's rule id.

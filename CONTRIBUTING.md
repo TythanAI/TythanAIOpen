@@ -57,14 +57,20 @@ community/                  # scan orchestrator, feature gates, report writers
   gates.py                 #   Community vs Pro feature gating + limits
   report.py                #   SARIF / HTML / JSON output
 scanners/                  # SAST, SCA, secrets, Solidity scanners
+  code_weakness_scanner.py #   built-in offline SAST rule engine (no deps)
 blockchain/                # TON + multi-chain (Solana/CosmWasm) auditors
 backend/scanners/          # IaC scanner
+benchmarks/                # reproducible corpus + scorecard (python -m benchmarks.measure)
 tests/                     # test suite
 ```
 
 ## Where to contribute
 
 - **Improve a scanner** — the detectors live in `scanners/` and `blockchain/`.
+  The built-in offline SAST rules are in `scanners/code_weakness_scanner.py`.
+- **Add a benchmark case** — extend `benchmarks/community_corpus.py` with a
+  vulnerable/secure pair, then confirm `python -m benchmarks.measure` still
+  reports **zero false positives**.
 - **Reduce false positives** — adjust detection logic and add a regression test.
 - **Improve reports** — `community/report.py` (SARIF / HTML / JSON).
 - **Docs & examples** — README, CI examples, usage guides.

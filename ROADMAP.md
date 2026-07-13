@@ -5,7 +5,8 @@ Priorities may shift based on user feedback.
 
 ## Now (Community Edition)
 
-- SAST via Semgrep + a curated rule set (Python / JS / TS / Java / Go / Rust / PHP / Ruby)
+- Built-in **offline SAST engine** (weak crypto, unsafe deserialization, TLS-off, eval/exec, command injection, dynamic SQL) — no external tools or network
+- Optional Semgrep integration for extra language/rule breadth
 - SCA via OSV.dev + EPSS enrichment, with an offline fallback
 - Secrets detection in source
 - IaC scanner (Terraform, CloudFormation, Kubernetes)
@@ -15,9 +16,9 @@ Priorities may shift based on user feedback.
 
 ## Next (within 3 months)
 
-- Expanded Community Web3 rule coverage
+- Expanded built-in SAST rules and Web3 rule coverage
+- Grow the reproducible benchmark corpus (`benchmarks/`) toward Juliet/OWASP breadth
 - Docker image published
-- Honest public benchmark on the Juliet corpus
 - More example CI integrations
 
 ## Pro ($39/dev/mo) & Enterprise
