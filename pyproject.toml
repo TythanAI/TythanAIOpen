@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tythanai-community"
-version = "1.6.0"
+version = "1.7.0"
 description = "Open-source security scanner — SAST, SCA, Secrets, IaC, TON/Solana/CosmWasm/Solidity"
 readme = "README.md"
 license = {text = "BSL-1.1"}
@@ -41,13 +41,20 @@ api = [
     "python-multipart>=0.0.9",
 ]
 memory = ["chromadb>=0.4.24"]
-ai = ["openai>=1.30.0"]
+# Anthropic SDK — used only if you opt in with TYTHANAI_AI=claude (needs ANTHROPIC_API_KEY).
+# The assistant defaults to a fully offline knowledge base; this is never required.
+ai = ["anthropic>=0.69.0"]
+# MCP runtime — lets Claude Code, Cursor, and VS Code (Continue/Cline) load TythanAI
+# as a local tool server. See `community/mcp_server.py` and the README "Agentic IDE
+# integration" section.
+mcp = ["mcp[cli]>=1.0.0"]
 full = [
     "fastapi>=0.110.0",
     "uvicorn[standard]>=0.27.0",
     "python-multipart>=0.0.9",
     "chromadb>=0.4.24",
-    "openai>=1.30.0",
+    "anthropic>=0.69.0",
+    "mcp[cli]>=1.0.0",
     "rich>=13.0.0",
 ]
 dev = [

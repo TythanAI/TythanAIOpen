@@ -4,6 +4,38 @@ All notable changes to **TythanAI Community Edition** are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/); versions
 follow [Semantic Versioning](https://semver.org/).
 
+## [1.7.0]
+
+### Added
+- **AI security assistant** (`tythanai explain|ask|chat`) — explains findings,
+  answers free-form questions, and holds a conversation, always grounded in an
+  offline CWE knowledge base so answers are accurate with zero model involved.
+  Optional local (Ollama) or cloud (Claude, opt-in) providers reason further on
+  top of that grounding; offline stays the default (`community/ai/`).
+- **MCP server** (`community/mcp_server.py`, `python -m community.mcp_server`)
+  exposing `scan_path`, `explain_finding`, `suggest_fix` and `list_rules` as
+  tools, so Claude Code, Cursor and VS Code can call TythanAI directly while
+  editing. `.mcp.json` registration example in the README.
+- **Anti-evasion scanner** (`scanners/evasion_scanner.py`, CWE-506) — decodes
+  base64/hex/split-string-obfuscated payloads before matching and flags only
+  when the *decoded* content is genuinely dangerous, closing a class of
+  pattern-matching bypasses without adding false positives.
+- **Authorization gate + non-destructive active validation**
+  (`community/authz.py`, `community/active_validation.py`, `tythanai validate`)
+  — turns a finding into a real exploitability assessment (static reachability
+  + a written, non-destructive reproduction note), but only for an owner with
+  a recorded, unexpired, in-scope authorization referencing signed written
+  permission or a video statement. Destructive/offensive actions (DoS,
+  brute-force, data wipes, weaponization…) are refused unconditionally in
+  code, regardless of authorization. Every request — granted or refused — is
+  appended to a tamper-evident audit log.
+
+### Changed
+- `ai` extra now installs `anthropic` (replacing a stale, unused `openai`
+  pin); new `mcp` extra installs the MCP runtime. Both remain fully optional —
+  the CLI and the offline AI assistant need neither.
+- Test suite grown to **183 tests**; all green, ruff clean.
+
 ## [1.6.0]
 
 ### Added

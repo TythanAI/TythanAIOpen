@@ -25,6 +25,9 @@
 <p align="center">
   <a href="#quick-start">Quick start</a> ·
   <a href="#whats-in-the-community-edition">What's included</a> ·
+  <a href="#ai-security-assistant">AI assistant</a> ·
+  <a href="#agentic-ide-integration-mcp">IDE integration</a> ·
+  <a href="#authorized-active-validation">Active validation</a> ·
   <a href="#community-vs-pro">Community vs Pro</a> ·
   <a href="#how-it-compares">How it compares</a> ·
   <a href="#transparency--benchmarks">Transparency</a>
@@ -103,6 +106,9 @@ Everything below runs **locally, free, with no account**:
 | 🔑 **Secrets** | **40+ secret patterns across 27 providers** (AWS, GCP, GitHub, Stripe, Slack, database URIs, private keys, crypto wallets…) plus entropy analysis. |
 | ☁️ **IaC** | Terraform, Kubernetes and CloudFormation misconfiguration checks (public buckets, open security groups, missing encryption…). |
 | 📄 **Reports** | **SARIF 2.1.0** with CWE tags and `security-severity` scores (GitHub Code Scanning ranks alerts correctly), plus **JSON** and a self-contained **HTML** report. |
+| 🕵️ **Anti-evasion** | Decodes base64/hex/split-string obfuscation *before* matching, so `eval(base64.b64decode(...))`-style payloads don't slip past pattern matching. Flags only when the **decoded** content is genuinely dangerous, so it stays false-positive-free. |
+| 🤖 **AI assistant** | `explain` / `ask` / `chat` — grounded in an offline CWE knowledge base by default (zero network, zero API key). Point it at a local Ollama model or Claude for deeper reasoning. Also ships as an **MCP server** so Claude Code, Cursor and VS Code can call it directly while you work. |
+| 🛡️ **Authorized validation** | Turns a static finding into a non-destructive exploitability assessment — but only for owners with a recorded, unexpired authorization on file. Refuses DoS/destructive actions unconditionally. |
 | 🔒 **Private by design** | Fully local. No account, no phone-home, no telemetry. |
 
 > The Community Edition is a fast, practical scanner that catches the most common,
@@ -176,6 +182,130 @@ The built-in engine needs no network; mount your code read-only and scan.
 
 ---
 
+## AI security assistant
+
+TythanAI doesn't just list findings — it explains them and answers questions
+about your code, the way an AI pair-programmer would.
+
+```bash
+# Explain every finding in a target, grounded in the CWE knowledge base
+tythanai explain ./myproject
+
+# Ask a one-off question (optionally scoped to a fresh scan)
+tythanai ask "what's my worst issue?" --scan ./myproject
+
+# Interactive chat — keeps the scan's findings as context
+tythanai chat --scan ./myproject
+```
+
+```text
+you › what's my worst issue?
+tythanai › 3 findings (CRITICAL 1 · HIGH 2). Most common: CWE-89 ×2.
+```
+
+**Three providers, offline by default** — set `TYTHANAI_AI`:
+
+| Provider | Where it runs | Setup |
+|---|---|---|
+| `offline` *(default)* | Nowhere — a curated knowledge base, no model | none |
+| `ollama` | Your machine, via [Ollama](https://ollama.ai) | `TYTHANAI_AI=ollama` |
+| `claude` | Anthropic's API (opt-in — this is the only mode where context leaves your machine) | `TYTHANAI_AI=claude` + `ANTHROPIC_API_KEY`, `pip install "tythanai-community[ai]"` |
+
+Offline isn't a crippled fallback — every explanation is grounded in the same
+rule → CWE mapping the scanner already computed, so it's accurate with zero
+model involved. `ollama`/`claude` reason further *on top of* that grounding
+instead of replacing it: same "nothing leaves your machine unless you ask"
+policy as the rest of the Community Edition.
+
+---
+
+## Agentic IDE integration (MCP)
+
+TythanAI ships as a local [Model Context Protocol](https://modelcontextprotocol.io)
+server, so **Claude Code, Cursor, and VS Code** (Continue/Cline) can call it as
+a tool while you work — scan the file you're editing, explain a finding, or
+get a fix suggestion, without leaving the editor or sending code anywhere.
+
+```bash
+pip install "tythanai-community[mcp]"
+python -m community.mcp_server
+```
+
+Register it once in `.mcp.json` (Claude Code, Cursor) and the agent starts the
+server itself on demand:
+
+```json
+{
+  "mcpServers": {
+    "tythanai": { "command": "python", "args": ["-m", "community.mcp_server"] }
+  }
+}
+```
+
+Four tools are exposed:
+
+| Tool | What it does |
+|---|---|
+| `scan_path(path, min_severity)` | Run a full scan, return structured findings |
+| `explain_finding(finding_json)` | Grounded explanation for one finding |
+| `suggest_fix(finding_json, code)` | Propose a concrete fix |
+| `list_rules(language)` | List the built-in SAST rules, optionally filtered |
+
+The agent gets findings from your actual code via the same offline-first
+engine as the CLI — not a guess — and in offline mode, nothing leaves the
+machine to produce them.
+
+---
+
+## Authorized active validation
+
+Static findings sometimes need a real answer to *"is this actually
+exploitable here?"* TythanAI's answer is an **authorization-gated,
+non-destructive assessment** — never a live exploit, never a
+denial-of-service, never anything aimed at a system you don't own.
+
+```bash
+tythanai validate ./myproject
+```
+
+With no authorization on file, it refuses outright and prints exactly what to
+create:
+
+```jsonc
+// .tythanai-authz.json
+{
+  "authorizations": [{
+    "organization": "Your Company",
+    "scope": ["/path/to/myproject/*"],
+    "authorized_by": "CISO / person who signed off",
+    "permission_ref": "URL or id of the signed letter or recorded video statement",
+    "expires": "2026-12-31"
+  }]
+}
+```
+
+With a valid, in-scope, unexpired authorization on file, `validate` reports
+static reachability plus a **non-destructive** reproduction note per finding
+class (e.g. "confirm in a database you own — never production"), and appends
+a line to `.tythanai-audit.log` for every request, authorized or refused.
+
+This is deliberately conservative, in code, not just in policy:
+
+- Some actions are **refused unconditionally** — DoS/DDoS, brute-force,
+  destructive payloads, data wipes, lateral movement, weaponization. No
+  authorization ever unlocks them.
+- Community Edition performs **assessment only**: static reachability plus a
+  written reproduction note, never live exploitation.
+- Sandboxed, single-target PoC execution against your own authorized
+  environment is a **Pro/Enterprise** capability — gated by the same
+  authorization file and audit trail, never open by default.
+
+The goal: a real answer for the people allowed to ask — the system's owner,
+with written permission or a recorded video statement on file — and a hard
+refusal for everyone else.
+
+---
+
 ## Community vs Pro
 
 The Community Edition is genuinely useful on its own. Teams shipping production
@@ -194,7 +324,10 @@ support.
 <tr><td>Reports</td><td align="center">SARIF · JSON · HTML</td><td align="center">+ SBOM · compliance</td></tr>
 <tr><td>GitHub Actions (SARIF upload)</td><td align="center">✅ self-hosted</td><td align="center">✅</td></tr>
 <tr><td>CI/CD gates on every pull request</td><td align="center">—</td><td align="center">✅</td></tr>
-<tr><td>AI triage &amp; fix suggestions</td><td align="center">—</td><td align="center">✅</td></tr>
+<tr><td>AI assistant — explain / ask / chat / suggest-fix</td><td align="center">✅ offline KB<br><sub>+ optional local/cloud LLM</sub></td><td align="center">✅ + whole-repo triage &amp; ranking</td></tr>
+<tr><td>MCP server for agentic IDEs (Claude Code · Cursor · VS Code)</td><td align="center">✅</td><td align="center">✅ + org-wide policy tools</td></tr>
+<tr><td>Anti-evasion (decodes base64/hex/split-string payloads)</td><td align="center">✅</td><td align="center">✅</td></tr>
+<tr><td>Authorization-gated active validation</td><td align="center">✅ non-destructive assessment</td><td align="center">✅ + sandboxed DAST PoC execution</td></tr>
 <tr><td>Auto-fix pull requests (AutoPR)</td><td align="center">—</td><td align="center">✅</td></tr>
 <tr><td>Dependency reachability analysis</td><td align="center">—</td><td align="center">✅</td></tr>
 <tr><td>Inter-procedural CPG taint (Go · Java · Rust)</td><td align="center">—</td><td align="center">✅</td></tr>
@@ -283,17 +416,22 @@ Two things we do on purpose:
 
 > The corpus is maintained in-repo alongside the rules — authoring is disclosed,
 > not hidden. The Community Edition also carries a full unit-test suite:
-> `pytest tests/ -v` (**161 tests**).
+> `pytest tests/ -v` (**183 tests**).
 
 ---
 
 ## Requirements
 
-- **Python 3.10+** — the built-in SAST engine, secrets, IaC and Web3 auditors
-  run with **no other dependencies and no network**.
+- **Python 3.10+** — the built-in SAST engine, secrets, IaC, Web3 auditors, and
+  the AI assistant's offline mode all run with **no other dependencies and no
+  network**.
 - Optional: [Semgrep](https://semgrep.dev) (installed with the package) widens
   SAST language coverage; [OSV.dev](https://osv.dev) is queried for live CVEs
   when online, with a bundled offline CVE set as fallback.
+- Optional extras: `pip install "tythanai-community[ai]"` for the Claude
+  provider, `pip install "tythanai-community[mcp]"` for the Claude
+  Code/Cursor/VS Code MCP server. Both are opt-in — the CLI and offline AI
+  assistant need neither.
 
 ---
 

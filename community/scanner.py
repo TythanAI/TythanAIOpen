@@ -159,6 +159,18 @@ class CommunityScanner:
             self._result.errors.append(f"SAST(semgrep): {exc}")
             logger.debug("semgrep error: %s", exc, exc_info=True)
 
+        # Anti-evasion: de-obfuscate encoded payloads and flag hidden dangerous
+        # content that would otherwise slip past pattern matching.
+        try:
+            from scanners.evasion_scanner import EvasionScanner
+            findings.extend(
+                _normalise(f, source="evasion")
+                for f in EvasionScanner().scan_directory(self.target)
+            )
+        except Exception as exc:
+            self._result.errors.append(f"SAST(evasion): {exc}")
+            logger.debug("evasion error: %s", exc, exc_info=True)
+
         self._result.sast_findings = _dedup_findings(findings)
 
     # ── SCA (OSV.dev) ─────────────────────────────────────────────────────────

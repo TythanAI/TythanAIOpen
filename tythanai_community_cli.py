@@ -72,7 +72,7 @@ _BANNER = r"""
   / / / / / / __/ __ \/ __ `/ _ \/ /| |  / /
  / / / /_/ / /_/ / / / /_/ /  __/ ___ |_/ /
 /_/  \__, /\__/_/ /_/\__,_/\___/_/  |_/___/
-    /____/   Community Edition  v1.6
+    /____/   Community Edition  v1.7
 """
 
 def _print_banner() -> None:
@@ -244,8 +244,116 @@ def cmd_scan(args) -> int:
     return 3
 
 
+def _scan_for_findings(target: str) -> list:
+    scanner = CommunityScanner(target)
+    return scanner.run().all_findings
+
+
+def cmd_explain(args) -> int:
+    from community.ai.assistant import SecurityAssistant
+    if not Path(args.target).exists():
+        print(RED(f"Error: target not found: {args.target}"), file=sys.stderr)
+        return 1
+    findings = _scan_for_findings(args.target)
+    assistant = SecurityAssistant()
+    print(DIM(f"  AI provider: {assistant.provider_name()}  ·  {len(findings)} findings\n"))
+    if not findings:
+        print(GREEN("  No findings to explain — looks clean."))
+        return 0
+    for i, f in enumerate(findings[: args.limit], 1):
+        print(BOLD(f"[{i}] ") + assistant.explain(f))
+        print()
+    return 0
+
+
+def cmd_ask(args) -> int:
+    from community.ai.assistant import SecurityAssistant
+    findings = _scan_for_findings(args.scan) if args.scan and Path(args.scan).exists() else []
+    assistant = SecurityAssistant()
+    print(DIM(f"  AI provider: {assistant.provider_name()}\n"))
+    print(assistant.ask(args.question, findings))
+    return 0
+
+
+def cmd_chat(args) -> int:
+    from community.ai.assistant import SecurityAssistant
+    findings = _scan_for_findings(args.scan) if args.scan and Path(args.scan).exists() else []
+    assistant = SecurityAssistant()
+    print(BOLD("TythanAI chat") + DIM(f"  (provider: {assistant.provider_name()}, "
+          f"{len(findings)} findings in context) — type 'exit' to quit\n"))
+    while True:
+        try:
+            q = input(CYAN("you › "))
+        except (EOFError, KeyboardInterrupt):
+            print()
+            break
+        if q.strip().lower() in ("exit", "quit", ":q"):
+            break
+        if not q.strip():
+            continue
+        print(BOLD("tythanai › ") + assistant.ask(q, findings) + "\n")
+    return 0
+
+
+def cmd_validate(args) -> int:
+    """Authorization-gated, non-destructive exploitability assessment.
+
+    Refuses outright unless an authorization file covers the target — see
+    `community/authz.py`. Never runs live exploitation, DoS, or destructive
+    payloads, with or without authorization; see `community/active_validation.py`.
+    """
+    from community.active_validation import ActiveValidator
+    from community.authz import AuthorizationError
+
+    if not Path(args.target).exists():
+        print(RED(f"Error: target not found: {args.target}"), file=sys.stderr)
+        return 1
+
+    validator = ActiveValidator(authz_file=args.authz_file, audit_log=args.audit_log)
+    findings = _scan_for_findings(args.target)
+    if args.severity:
+        order = {"INFO": 0, "LOW": 1, "MEDIUM": 2, "HIGH": 3, "CRITICAL": 4}
+        floor = order.get(args.severity.upper(), 1)
+        findings = [f for f in findings
+                   if order.get(str(f.get("severity", "INFO")).upper(), 0) >= floor]
+    if not findings:
+        print(GREEN("  No findings to validate."))
+        return 0
+
+    try:
+        results = [validator.validate(findings[0], args.target)]
+    except AuthorizationError as exc:
+        print(RED(f"  {exc}"))
+        template = {"authorizations": [{
+            "organization": "Your Company",
+            "scope": [f"{args.target}/*"],
+            "authorized_by": "CISO / person who signed off",
+            "permission_ref": "URL or id of the signed letter or recorded video statement",
+            "expires": "2026-12-31",
+        }]}
+        print(DIM(f"\n  Create {args.authz_file} to enable validation, e.g.:\n"
+                  + json.dumps(template, indent=2)))
+        return 1
+
+    for f in findings[1: args.limit]:
+        try:
+            results.append(validator.validate(f, args.target))
+        except AuthorizationError:
+            break
+
+    print(BOLD(f"  Authorized for: {results[0]['authorized_org']}") +
+          DIM(f"  (authorization {results[0]['authorization']})\n"))
+    for i, r in enumerate(results, 1):
+        print(BOLD(f"[{i}] {r['rule_id']} ") + DIM(f"({r['cwe']})"))
+        print(f"    Statically reachable: {r['statically_reachable']}")
+        print(f"    {r['reproduction_note']}")
+    print(DIM(f"\n  {results[0]['note']}"))
+    print(DIM(f"  Audit log: {args.audit_log}"))
+    return 0
+
+
 def cmd_version(args) -> int:
-    print("TythanAI Community Edition v1.6.0")
+    print("TythanAI Community Edition v1.7.0")
     print("Copyright (c) 2026 TythanAI Labs — BSL 1.1")
     print("https://tythanai.io")
     return 0
@@ -276,6 +384,27 @@ def _build_parser() -> argparse.ArgumentParser:
                       help="write current findings to the --baseline file and exit 0")
     scan.add_argument("--quiet", "-q", action="store_true")
 
+    ex = sub.add_parser("explain", help="Scan a target and explain each finding")
+    ex.add_argument("target", help="Path to scan")
+    ex.add_argument("--limit", type=int, default=20, help="Max findings to explain")
+
+    ask = sub.add_parser("ask", help="Ask a security question (optionally about a scan)")
+    ask.add_argument("question", help="Your question, in quotes")
+    ask.add_argument("--scan", metavar="PATH", help="Scan PATH first and use it as context")
+
+    chat = sub.add_parser("chat", help="Interactive security chat")
+    chat.add_argument("--scan", metavar="PATH", help="Scan PATH first and use it as context")
+
+    val = sub.add_parser("validate", help="Authorization-gated, non-destructive exploitability "
+                                          "assessment (owners with written/video permission only)")
+    val.add_argument("target", help="Path to scan and validate")
+    val.add_argument("--authz-file", default=".tythanai-authz.json",
+                     help="Authorization file (default: .tythanai-authz.json)")
+    val.add_argument("--audit-log", default=".tythanai-audit.log",
+                     help="Append-only audit log (default: .tythanai-audit.log)")
+    val.add_argument("--severity", help="Minimum severity to validate")
+    val.add_argument("--limit", type=int, default=10, help="Max findings to validate")
+
     sub.add_parser("version", help="Show version information")
 
     return p
@@ -285,13 +414,19 @@ def main() -> None:
     parser = _build_parser()
     args = parser.parse_args()
 
-    if args.command == "scan":
-        sys.exit(cmd_scan(args))
-    elif args.command == "version":
-        sys.exit(cmd_version(args))
-    else:
-        parser.print_help()
-        sys.exit(0)
+    dispatch = {
+        "scan": cmd_scan,
+        "explain": cmd_explain,
+        "ask": cmd_ask,
+        "chat": cmd_chat,
+        "validate": cmd_validate,
+        "version": cmd_version,
+    }
+    handler = dispatch.get(args.command)
+    if handler:
+        sys.exit(handler(args))
+    parser.print_help()
+    sys.exit(0)
 
 
 if __name__ == "__main__":
