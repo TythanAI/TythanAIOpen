@@ -81,6 +81,11 @@
   td.c,th.c{text-align:center}
   .yes{color:var(--green);font-weight:700} .no{color:var(--faint)}
   .price{font-weight:800}
+  .cat td{padding-top:22px;font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;
+    color:var(--faint);border-top:0}
+  .pro-hero{background:linear-gradient(135deg,var(--panel) 0%,var(--bg) 100%);border:1px solid var(--line);
+    border-radius:var(--radius);padding:28px}
+  @media (max-width:720px){.pro-hero{padding:20px}}
 
   .bench{display:grid;grid-template-columns:1.3fr 1fr;gap:16px;align-items:center}
   @media (max-width:720px){.bench{grid-template-columns:1fr}}
@@ -103,6 +108,7 @@
     <div class="nav-links">
       <a href="#engines">Engines</a>
       <a href="#ai">AI &amp; IDE</a>
+      <a href="#pro">🚀 Pro</a>
       <a href="#compare">Community vs Pro</a>
       <a href="#benchmark">Benchmarks</a>
       <a href="https://github.com/TythanAI/TythanAIOpen">GitHub</a>
@@ -187,6 +193,39 @@
     </div>
   </section>
 
+  <section id="pro">
+    <div class="pro-hero">
+      <span class="eyebrow"><b></b> TYTHANAI PRO</span>
+      <h2 style="margin-top:14px">Go further with Pro</h2>
+      <p class="sub">Community catches the obvious stuff, fast, for free. <strong>Pro is what teams
+        reach for once the codebase — and the stakes — get real:</strong> a security copilot that
+        proves its own fixes, and real attack simulation for the people who are actually allowed
+        to run it.</p>
+      <div class="grid">
+        <div class="card"><h3>🧠 An AI copilot that proves its fixes</h3>
+          <p>Every AI-generated patch runs through a <strong>proof-verification gate</strong> —
+          applied, re-scanned, shipped only if the finding is gone and nothing new broke. Triage
+          runs across your whole repository, not one file at a time.</p></div>
+        <div class="card"><h3>🎯 Real attack simulation, safely</h3>
+          <p>Community assesses; <strong>Pro exploits.</strong> Sandboxed, single-target PoC
+          execution — live SQLi/XSS probing, real port scans — gated by signed authorization and
+          an audit trail, never on by default. Built for teams who can prove they're allowed.</p></div>
+        <div class="card"><h3>🔬 Taint tracking, not pattern matching</h3>
+          <p>Dedicated inter-procedural taint engines — Go, Java, Rust, C#, Ruby, PHP, JS/TS —
+          trace input across function and file boundaries, catching SSRF, second-order SQL and
+          open-redirect classes Community honestly scores 0% on.</p></div>
+        <div class="card"><h3>🏢 Built for the audit, not just the scan</h3>
+          <p>SOC 2 / ISO 27001-ready audit logs, RBAC, SBOM (SPDX/CycloneDX), a multi-agent
+          orchestrator for parallel fleet scanning, and a dashboard with Slack &amp; Jira so
+          findings reach the people who fix them.</p></div>
+      </div>
+      <div class="cta" style="margin-top:22px">
+        <a class="btn" href="https://tythanai.io/pricing">Start free trial — $39/dev/mo →</a>
+        <a class="btn ghost" href="https://tythanai.io/pricing">Book a demo</a>
+      </div>
+    </div>
+  </section>
+
   <section id="compare">
     <h2>Community vs Pro</h2>
     <p class="sub">The Community Edition is genuinely useful on its own. Teams and audit firms
@@ -194,14 +233,23 @@
     <table>
       <thead><tr><th>Capability</th><th class="c">Community · free</th><th class="c">Pro · <span class="price">$39</span>/dev/mo</th></tr></thead>
       <tbody>
-        <tr><td>Local CLI — SAST · SCA · Secrets · IaC · Web3</td><td class="c yes">✓</td><td class="c yes">✓</td></tr>
-        <tr><td>Web3 rule packs (TON · Solidity · Solana · CosmWasm)</td><td class="c">Core checks</td><td class="c">Full set + deep analysis</td></tr>
-        <tr><td>AI assistant — explain · ask · chat</td><td class="c yes">✓ offline KB</td><td class="c yes">✓ + whole-repo triage</td></tr>
+        <tr class="cat"><td colspan="3">AI &amp; Automation</td></tr>
+        <tr><td>AI assistant — explain · ask · chat · suggest-fix</td><td class="c yes">✓ offline KB</td><td class="c yes">✓ + whole-repo triage</td></tr>
+        <tr><td>Proof-verified AI auto-fix (re-scanned to confirm)</td><td class="c no">—</td><td class="c yes">✓</td></tr>
+        <tr><td>Auto-generated fix pull requests (AutoPR)</td><td class="c no">—</td><td class="c yes">✓</td></tr>
         <tr><td>MCP server (Claude Code · Cursor · VS Code)</td><td class="c yes">✓</td><td class="c yes">✓ + org-wide policy</td></tr>
-        <tr><td>Anti-evasion &amp; authorized active validation</td><td class="c yes">✓ assessment only</td><td class="c yes">✓ + sandboxed DAST PoC</td></tr>
-        <tr><td>Auto-fix pull requests · CI/CD gates</td><td class="c no">—</td><td class="c yes">✓</td></tr>
+        <tr><td>CI/CD gates on every pull request</td><td class="c no">—</td><td class="c yes">✓</td></tr>
+        <tr class="cat"><td colspan="3">Security Testing</td></tr>
+        <tr><td>Anti-evasion (base64 · hex · split-string · char-code)</td><td class="c yes">✓</td><td class="c yes">✓</td></tr>
+        <tr><td>Authorization-gated active validation</td><td class="c yes">✓ assessment only</td><td class="c yes">✓ + sandboxed DAST PoC</td></tr>
+        <tr><td>Inter-procedural CPG taint (Go · Java · Rust · C# · Ruby · PHP)</td><td class="c no">—</td><td class="c yes">✓</td></tr>
         <tr><td>Dependency reachability analysis</td><td class="c no">—</td><td class="c yes">✓</td></tr>
-        <tr><td>Inter-procedural CPG taint (Go · Java · Rust)</td><td class="c no">—</td><td class="c yes">✓</td></tr>
+        <tr class="cat"><td colspan="3">Web3 &amp; Coverage</td></tr>
+        <tr><td>Local CLI — SAST · SCA · Secrets · IaC · Web3</td><td class="c yes">✓</td><td class="c yes">✓</td></tr>
+        <tr><td>Web3 rule packs (TON · Solidity · Solana · CosmWasm)</td><td class="c">Core checks</td><td class="c">Full set + symbolic/formal</td></tr>
+        <tr class="cat"><td colspan="3">Enterprise &amp; Compliance</td></tr>
+        <tr><td>Audit log</td><td class="c yes">✓ local file</td><td class="c yes">✓ SOC 2/ISO 27001-ready + RBAC</td></tr>
+        <tr><td>Multi-agent orchestrator</td><td class="c no">—</td><td class="c yes">✓</td></tr>
         <tr><td>Slack &amp; Jira · SaaS dashboard</td><td class="c no">—</td><td class="c yes">✓</td></tr>
         <tr><td>Support</td><td class="c">Community</td><td class="c">Priority + SLA</td></tr>
       </tbody>

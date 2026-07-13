@@ -20,6 +20,7 @@
   <img alt="Engines" src="https://img.shields.io/badge/engines-SAST%20%C2%B7%20SCA%20%C2%B7%20Secrets%20%C2%B7%20IaC%20%C2%B7%20Web3-41d18a.svg">
   <img alt="Privacy" src="https://img.shields.io/badge/telemetry-none-2ea043.svg">
   <a href="CONTRIBUTING.md"><img alt="PRs welcome" src="https://img.shields.io/badge/PRs-welcome-8250df.svg"></a>
+  <a href="https://tythanai.io/pricing"><img alt="Pro" src="https://img.shields.io/badge/Pro-AI%20copilot%20%C2%B7%20real%20attack%20sim%20%C2%B7%20%2439%2Fdev%2Fmo-6366f1.svg"></a>
 </p>
 
 <p align="center">
@@ -28,6 +29,7 @@
   <a href="#ai-security-assistant">AI assistant</a> ·
   <a href="#agentic-ide-integration-mcp">IDE integration</a> ·
   <a href="#authorized-active-validation">Active validation</a> ·
+  <a href="#go-further-with-pro">🚀 Pro</a> ·
   <a href="#community-vs-pro">Community vs Pro</a> ·
   <a href="#how-it-compares">How it compares</a> ·
   <a href="#transparency--benchmarks">Transparency</a>
@@ -306,6 +308,64 @@ refusal for everyone else.
 
 ---
 
+## Go further with Pro
+
+Community catches the obvious stuff, fast, for free. **Pro is what teams reach
+for once the codebase — and the stakes — get real:** a security copilot that
+proves its own fixes, and real attack simulation for the people who are
+actually allowed to run it.
+
+<table>
+<tr>
+<td width="50%" valign="top">
+
+### 🧠 An AI copilot that proves its fixes
+Pro's AI doesn't just propose a diff and hope. Every AI-generated patch runs
+through a **proof-verification gate** — applied, re-scanned, and shipped only
+if the original finding is gone *and* nothing new broke. Triage and ranking
+run across your **whole repository**, not one file at a time.
+
+</td>
+<td width="50%" valign="top">
+
+### 🎯 Real attack simulation — safely, for the authorized
+Community assesses; **Pro exploits.** Sandboxed, single-target PoC execution
+— live SQLi/XSS probing, real port scans — against environments you're
+authorized to test, gated by the same signed-permission-and-audit-trail
+system, never on by default. Built for security teams and audit firms who
+have the paperwork to prove they're allowed.
+
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
+
+### 🔬 Taint tracking, not just pattern matching
+Dedicated inter-procedural taint engines per language — Go, Java, Rust, C#,
+Ruby, PHP, JS/TS — follow attacker-controlled input across function and file
+boundaries, catching the SSRF, second-order SQL and open-redirect classes
+Community honestly scores 0% on because they need real data-flow analysis.
+
+</td>
+<td width="50%" valign="top">
+
+### 🏢 Built for the audit, not just the scan
+Immutable, SOC 2 / ISO 27001-ready audit logs, RBAC, SBOM (SPDX/CycloneDX)
+and compliance reports, a multi-agent orchestrator for parallel fleet
+scanning, plus a SaaS dashboard with Slack &amp; Jira so findings reach the
+people who fix them — with priority support and an SLA behind it.
+
+</td>
+</tr>
+</table>
+
+<p align="center">
+  <a href="https://tythanai.io/pricing"><img alt="Start your Pro trial" src="https://img.shields.io/badge/Start%20free%20trial-Pro%20%C2%B7%20%2439%2Fdev%2Fmo-6366f1?style=for-the-badge"></a>
+  <a href="https://tythanai.io/pricing"><img alt="Book a demo" src="https://img.shields.io/badge/Book%20a%20demo-0b0b0c?style=for-the-badge"></a>
+</p>
+
+---
+
 ## Community vs Pro
 
 The Community Edition is genuinely useful on its own. Teams shipping production
@@ -318,26 +378,31 @@ support.
   <th align="center">Community<br><sub>free · BSL 1.1</sub></th>
   <th align="center">Pro<br><sub><strong>$39</strong> / dev / mo</sub></th>
 </tr>
+<tr><td colspan="3">&nbsp;<br><sub><strong>🧠 AI &amp; AUTOMATION</strong></sub></td></tr>
+<tr><td>AI assistant — explain / ask / chat / suggest-fix</td><td align="center">✅ offline KB<br><sub>+ optional local/cloud LLM</sub></td><td align="center">✅ + whole-repo triage &amp; ranking</td></tr>
+<tr><td><strong>Proof-verified AI auto-fix</strong> (re-scanned to confirm the fix works, nothing new breaks)</td><td align="center">—</td><td align="center">✅</td></tr>
+<tr><td>Auto-generated fix pull requests (AutoPR)</td><td align="center">—</td><td align="center">✅</td></tr>
+<tr><td>MCP server for agentic IDEs (Claude Code · Cursor · VS Code)</td><td align="center">✅</td><td align="center">✅ + org-wide policy tools</td></tr>
+<tr><td>CI/CD gates on every pull request</td><td align="center">—</td><td align="center">✅</td></tr>
+<tr><td colspan="3">&nbsp;<br><sub><strong>🎯 SECURITY TESTING</strong></sub></td></tr>
+<tr><td>Anti-evasion (decodes base64/hex/split-string/char-code payloads)</td><td align="center">✅</td><td align="center">✅</td></tr>
+<tr><td>Authorization-gated active validation</td><td align="center">✅ non-destructive assessment</td><td align="center">✅ + <strong>sandboxed DAST PoC execution</strong></td></tr>
+<tr><td>Inter-procedural CPG taint (Go · Java · Rust · C# · Ruby · PHP · JS/TS)</td><td align="center">—</td><td align="center">✅</td></tr>
+<tr><td>Dependency reachability analysis (is the CVE actually reachable?)</td><td align="center">—</td><td align="center">✅</td></tr>
+<tr><td colspan="3">&nbsp;<br><sub><strong>🪙 WEB3 &amp; CODE COVERAGE</strong></sub></td></tr>
 <tr><td>Local CLI — SAST · SCA · Secrets · IaC · Web3</td><td align="center">✅</td><td align="center">✅</td></tr>
 <tr><td>Repositories</td><td align="center">Unlimited (local)</td><td align="center">Unlimited (managed)</td></tr>
-<tr><td>Web3 rule packs (TON · Solidity · Solana · CosmWasm)</td><td align="center">Core checks</td><td align="center">Full set + deep analysis</td></tr>
-<tr><td>Reports</td><td align="center">SARIF · JSON · HTML</td><td align="center">+ SBOM · compliance</td></tr>
-<tr><td>GitHub Actions (SARIF upload)</td><td align="center">✅ self-hosted</td><td align="center">✅</td></tr>
-<tr><td>CI/CD gates on every pull request</td><td align="center">—</td><td align="center">✅</td></tr>
-<tr><td>AI assistant — explain / ask / chat / suggest-fix</td><td align="center">✅ offline KB<br><sub>+ optional local/cloud LLM</sub></td><td align="center">✅ + whole-repo triage &amp; ranking</td></tr>
-<tr><td>MCP server for agentic IDEs (Claude Code · Cursor · VS Code)</td><td align="center">✅</td><td align="center">✅ + org-wide policy tools</td></tr>
-<tr><td>Anti-evasion (decodes base64/hex/split-string/char-code payloads)</td><td align="center">✅</td><td align="center">✅</td></tr>
-<tr><td>Authorization-gated active validation</td><td align="center">✅ non-destructive assessment</td><td align="center">✅ + sandboxed DAST PoC execution</td></tr>
-<tr><td>Auto-fix pull requests (AutoPR)</td><td align="center">—</td><td align="center">✅</td></tr>
-<tr><td>Dependency reachability analysis</td><td align="center">—</td><td align="center">✅</td></tr>
-<tr><td>Inter-procedural CPG taint (Go · Java · Rust)</td><td align="center">—</td><td align="center">✅</td></tr>
-<tr><td>DAST — active web scanning</td><td align="center">—</td><td align="center">✅</td></tr>
-<tr><td>Slack &amp; Jira integration</td><td align="center">—</td><td align="center">✅</td></tr>
-<tr><td>SaaS dashboard, webhooks, team roles</td><td align="center">—</td><td align="center">✅</td></tr>
+<tr><td>Web3 rule packs (TON · Solidity · Solana · CosmWasm)</td><td align="center">Core checks</td><td align="center">Full set + symbolic/formal analysis</td></tr>
+<tr><td colspan="3">&nbsp;<br><sub><strong>🏢 ENTERPRISE &amp; COMPLIANCE</strong></sub></td></tr>
+<tr><td>Reports</td><td align="center">SARIF · JSON · HTML</td><td align="center">+ SBOM (SPDX/CycloneDX) · compliance</td></tr>
+<tr><td>GitHub Actions (SARIF upload)</td><td align="center">✅ self-hosted</td><td align="center">✅ managed</td></tr>
+<tr><td>Audit log</td><td align="center">✅ local file</td><td align="center">✅ SOC 2 / ISO 27001-ready + RBAC</td></tr>
+<tr><td>Multi-agent orchestrator (parallel scanner fleet)</td><td align="center">—</td><td align="center">✅</td></tr>
+<tr><td>Slack &amp; Jira integration, SaaS dashboard, webhooks</td><td align="center">—</td><td align="center">✅</td></tr>
 <tr><td>Support</td><td align="center">Community (issues)</td><td align="center">Priority + SLA</td></tr>
 </table>
 
-<p align="center"><strong>Pro is $39 / developer / month.</strong> Start a free trial or book a demo at <a href="https://tythanai.io/pricing">tythanai.io/pricing</a>.</p>
+<p align="center"><strong>Pro is $39 / developer / month.</strong> <a href="https://tythanai.io/pricing"><strong>Start a free trial or book a demo →</strong></a></p>
 
 ---
 
