@@ -17,7 +17,7 @@ follow [Semantic Versioning](https://semver.org/).
   tools, so Claude Code, Cursor and VS Code can call TythanAI directly while
   editing. `.mcp.json` registration example in the README.
 - **Anti-evasion scanner** (`scanners/evasion_scanner.py`, CWE-506) — decodes
-  base64/hex/split-string-obfuscated payloads before matching and flags only
+  base64/hex/split-string/char-code-obfuscated payloads before matching and flags only
   when the *decoded* content is genuinely dangerous, closing a class of
   pattern-matching bypasses without adding false positives.
 - **Authorization gate + non-destructive active validation**
@@ -34,7 +34,7 @@ follow [Semantic Versioning](https://semver.org/).
 - `ai` extra now installs `anthropic` (replacing a stale, unused `openai`
   pin); new `mcp` extra installs the MCP runtime. Both remain fully optional —
   the CLI and the offline AI assistant need neither.
-- Test suite grown to **183 tests**; all green, ruff clean.
+- Test suite grown to **186 tests**; all green, ruff clean.
 
 ## [1.6.0]
 

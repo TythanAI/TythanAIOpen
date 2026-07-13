@@ -46,6 +46,21 @@ def test_evasion_no_false_positive_on_benign():
     assert EvasionScanner().scan_text("def add(a, b):\n    return a + b") == []
 
 
+def test_evasion_detects_charcode_python():
+    chain = "+".join(f"chr({ord(c)})" for c in "eval")
+    findings = EvasionScanner().scan_text(f"fn = {chain}")
+    assert any(f["rule_id"] == "TYT-E001" and "eval" in f["evidence"] for f in findings)
+
+
+def test_evasion_detects_charcode_js():
+    findings = EvasionScanner().scan_text("var fn = String.fromCharCode(101,118,97,108);")
+    assert any(f["cwe"] == "CWE-506" for f in findings)
+
+
+def test_evasion_no_false_positive_on_short_charcode():
+    assert EvasionScanner().scan_text("var c = String.fromCharCode(65);") == []
+
+
 # ── AI knowledge base / assistant (offline) ───────────────────────────────────
 
 def test_knowledge_base_covers_scanner_cwes():

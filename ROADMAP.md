@@ -16,7 +16,7 @@ Priorities may shift based on user feedback.
 - Web3 auditing — core checks for TON FunC/Tolk, Solidity, Solana/Anchor, CosmWasm
 - GitHub Actions integration
 - SARIF 2.1.0, JSON and HTML reports
-- **Anti-evasion detection** — decodes base64/hex/split-string obfuscation
+- **Anti-evasion detection** — decodes base64/hex/split-string/char-code obfuscation
   before matching (CWE-506)
 - **AI security assistant** (`explain` / `ask` / `chat`) — offline by default
   (CWE knowledge base), optional local Ollama or opt-in Claude for deeper

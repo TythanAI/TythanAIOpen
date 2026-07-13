@@ -106,7 +106,7 @@ Everything below runs **locally, free, with no account**:
 | 🔑 **Secrets** | **40+ secret patterns across 27 providers** (AWS, GCP, GitHub, Stripe, Slack, database URIs, private keys, crypto wallets…) plus entropy analysis. |
 | ☁️ **IaC** | Terraform, Kubernetes and CloudFormation misconfiguration checks (public buckets, open security groups, missing encryption…). |
 | 📄 **Reports** | **SARIF 2.1.0** with CWE tags and `security-severity` scores (GitHub Code Scanning ranks alerts correctly), plus **JSON** and a self-contained **HTML** report. |
-| 🕵️ **Anti-evasion** | Decodes base64/hex/split-string obfuscation *before* matching, so `eval(base64.b64decode(...))`-style payloads don't slip past pattern matching. Flags only when the **decoded** content is genuinely dangerous, so it stays false-positive-free. |
+| 🕵️ **Anti-evasion** | Decodes base64/hex/split-string/char-code obfuscation *before* matching, so `eval(base64.b64decode(...))`-style payloads don't slip past pattern matching. Flags only when the **decoded** content is genuinely dangerous, so it stays false-positive-free. |
 | 🤖 **AI assistant** | `explain` / `ask` / `chat` — grounded in an offline CWE knowledge base by default (zero network, zero API key). Point it at a local Ollama model or Claude for deeper reasoning. Also ships as an **MCP server** so Claude Code, Cursor and VS Code can call it directly while you work. |
 | 🛡️ **Authorized validation** | Turns a static finding into a non-destructive exploitability assessment — but only for owners with a recorded, unexpired authorization on file. Refuses DoS/destructive actions unconditionally. |
 | 🔒 **Private by design** | Fully local. No account, no phone-home, no telemetry. |
@@ -326,7 +326,7 @@ support.
 <tr><td>CI/CD gates on every pull request</td><td align="center">—</td><td align="center">✅</td></tr>
 <tr><td>AI assistant — explain / ask / chat / suggest-fix</td><td align="center">✅ offline KB<br><sub>+ optional local/cloud LLM</sub></td><td align="center">✅ + whole-repo triage &amp; ranking</td></tr>
 <tr><td>MCP server for agentic IDEs (Claude Code · Cursor · VS Code)</td><td align="center">✅</td><td align="center">✅ + org-wide policy tools</td></tr>
-<tr><td>Anti-evasion (decodes base64/hex/split-string payloads)</td><td align="center">✅</td><td align="center">✅</td></tr>
+<tr><td>Anti-evasion (decodes base64/hex/split-string/char-code payloads)</td><td align="center">✅</td><td align="center">✅</td></tr>
 <tr><td>Authorization-gated active validation</td><td align="center">✅ non-destructive assessment</td><td align="center">✅ + sandboxed DAST PoC execution</td></tr>
 <tr><td>Auto-fix pull requests (AutoPR)</td><td align="center">—</td><td align="center">✅</td></tr>
 <tr><td>Dependency reachability analysis</td><td align="center">—</td><td align="center">✅</td></tr>
@@ -416,7 +416,7 @@ Two things we do on purpose:
 
 > The corpus is maintained in-repo alongside the rules — authoring is disclosed,
 > not hidden. The Community Edition also carries a full unit-test suite:
-> `pytest tests/ -v` (**183 tests**).
+> `pytest tests/ -v` (**186 tests**).
 
 ---
 

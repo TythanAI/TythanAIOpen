@@ -35,6 +35,9 @@ _DANGEROUS = re.compile(
 _B64 = re.compile(r"['\"`]([A-Za-z0-9+/]{16,}={0,2})['\"`]")
 _HEX = re.compile(r"((?:\\x[0-9A-Fa-f]{2}){8,})")
 _CONCAT = re.compile(r"['\"]\s*[+.]\s*['\"]")
+_CHR_CHAIN = re.compile(r"(?:chr\(\s*\d{1,3}\s*\)\s*[+.]\s*){2,}chr\(\s*\d{1,3}\s*\)", re.IGNORECASE)
+_CHR_NUM = re.compile(r"chr\(\s*(\d{1,3})\s*\)", re.IGNORECASE)
+_FROMCHARCODE = re.compile(r"(?:String\s*\.\s*)?fromCharCode\(\s*([\d,\s]{5,})\)", re.IGNORECASE)
 
 
 def _printable(b: bytes) -> str:
@@ -70,6 +73,34 @@ def _decode_hex(text: str) -> List[tuple]:
             continue
         if decoded and _DANGEROUS.search(decoded):
             out.append(("hex", decoded, text[:m.start()].count("\n") + 1))
+    return out
+
+
+def _nums_to_printable(nums: List[int]) -> str:
+    if len(nums) < 3 or any(n < 0 or n > 255 for n in nums):
+        return ""
+    try:
+        return _printable(bytes(nums))
+    except ValueError:
+        return ""
+
+
+def _decode_charcode(text: str) -> List[tuple]:
+    """Char-code arrays: Python/PHP `chr(101)+chr(118)+...`, JS `String.fromCharCode(...)`."""
+    out = []
+    for m in _CHR_CHAIN.finditer(text):
+        nums = [int(n) for n in _CHR_NUM.findall(m.group(0))]
+        decoded = _nums_to_printable(nums)
+        if decoded and _DANGEROUS.search(decoded):
+            out.append(("char-code", decoded, text[:m.start()].count("\n") + 1))
+    for m in _FROMCHARCODE.finditer(text):
+        try:
+            nums = [int(n.strip()) for n in m.group(1).split(",") if n.strip()]
+        except ValueError:
+            continue
+        decoded = _nums_to_printable(nums)
+        if decoded and _DANGEROUS.search(decoded):
+            out.append(("char-code", decoded, text[:m.start()].count("\n") + 1))
     return out
 
 
@@ -117,7 +148,7 @@ class EvasionScanner:
     def scan_text(self, text: str, file: str = "<memory>") -> List[dict]:
         out: List[dict] = []
         for kind, revealed, line in (_decode_b64(text) + _decode_hex(text)
-                                     + _find_concat_evasion(text)):
+                                     + _decode_charcode(text) + _find_concat_evasion(text)):
             out.append(_finding(kind, revealed, file, line))
         return out
 
