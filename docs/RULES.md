@@ -2,7 +2,7 @@
 
 > Auto-generated from `scanners/code_weakness_scanner.py` by `python -m benchmarks.gen_rules_doc`. Do not edit by hand.
 
-The offline engine ships **53 rules** across **10 languages** and **11 CWE classes** (CWE-22, CWE-295, CWE-327, CWE-330, CWE-502, CWE-611, CWE-676, CWE-78, CWE-79, CWE-89, CWE-95). Every rule runs with no external tools and no network, and each is exercised by the benchmark corpus (`python -m benchmarks.measure`).
+The offline engine ships **58 rules** across **10 languages** and **13 CWE classes** (CWE-22, CWE-295, CWE-327, CWE-330, CWE-502, CWE-611, CWE-643, CWE-676, CWE-78, CWE-79, CWE-89, CWE-90, CWE-95). Every rule runs with no external tools and no network, and each is exercised by the benchmark corpus (`python -m benchmarks.measure`).
 
 ## Python
 
@@ -23,6 +23,8 @@ The offline engine ships **53 rules** across **10 languages** and **11 CWE class
 | `TYT-P013` | CWE-611 | MEDIUM | XML parsed without external-entity protection (XXE) |
 | `TYT-P014` | CWE-22 | HIGH | User-controlled path passed to open() (traversal) |
 | `TYT-P015` | CWE-89 | HIGH | Dynamic SQL passed to a query helper (injection) |
+| `TYT-P016` | CWE-643 | HIGH | XPath built from dynamic string (injection) |
+| `TYT-P017` | CWE-90 | HIGH | LDAP filter built from unescaped input (injection) |
 
 ## JavaScript / TypeScript
 
@@ -52,6 +54,7 @@ The offline engine ships **53 rules** across **10 languages** and **11 CWE class
 | `TYT-A003` | CWE-89 | HIGH | SQL built from string concatenation (injection) |
 | `TYT-A004` | CWE-502 | HIGH | Unsafe Java deserialization (ObjectInputStream) |
 | `TYT-A005` | CWE-330 | MEDIUM | Insecure randomness for a security value (use SecureRandom) |
+| `TYT-A006` | CWE-643 | HIGH | XPath built from string concatenation (injection) |
 
 ## PHP
 
@@ -62,6 +65,7 @@ The offline engine ships **53 rules** across **10 languages** and **11 CWE class
 | `TYT-H003` | CWE-89 | HIGH | SQL built from interpolated/concatenated string |
 | `TYT-H004` | CWE-502 | HIGH | Unsafe deserialization (unserialize) |
 | `TYT-H005` | CWE-95 | HIGH | Code injection via eval() |
+| `TYT-H006` | CWE-643 | HIGH | XPath built from interpolated/concatenated string |
 
 ## Ruby
 
@@ -81,6 +85,7 @@ The offline engine ships **53 rules** across **10 languages** and **11 CWE class
 | `TYT-C002` | CWE-78 | HIGH | Command execution with concatenated input |
 | `TYT-C003` | CWE-89 | HIGH | SQL built from concatenation/interpolation |
 | `TYT-C004` | CWE-502 | HIGH | Unsafe deserialization (BinaryFormatter) |
+| `TYT-C005` | CWE-643 | HIGH | XPath built from concatenation/interpolation |
 
 ## Kotlin
 

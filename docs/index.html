@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TythanAI Community Edition — open, Web3-native security scanner</title>
+<meta name="description" content="Open-source security scanner: SAST, SCA, Secrets, IaC and native Web3 auditing for TON, Solidity, Solana and CosmWasm. One CLI, no account, no telemetry.">
+<style>
+  :root{
+    --bg:#f6f5f2; --panel:#ffffff; --ink:#0b0b0c; --muted:#5c5a55; --faint:#8a8880;
+    --line:#e5e3dd; --accent:#0b0b0c; --green:#1f8a52; --crit:#d1453b;
+    --code-bg:#0d0d10; --code-ink:#d6d6db; --radius:16px; --max:1080px;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{--bg:#0c0c0e; --panel:#151518; --ink:#f4f3f1; --muted:#a7a5a0; --faint:#6b6b73;
+      --line:#26262b; --accent:#f4f3f1; --green:#41d18a; --crit:#ff6b6b;}
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.6;-webkit-font-smoothing:antialiased}
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:var(--max);margin:0 auto;padding:0 20px}
+  .mono{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace}
+
+  /* nav */
+  nav{display:flex;align-items:center;justify-content:space-between;padding:20px 0}
+  .brand{display:flex;align-items:center;gap:12px;font-weight:800;letter-spacing:-.4px;font-size:19px}
+  .bars{display:flex;gap:3px;align-items:flex-end;height:22px}
+  .bars span{width:4px;background:var(--ink);border-radius:2px;animation:pulse 1.8s ease-in-out infinite}
+  .bars span:nth-child(1){height:10px} .bars span:nth-child(2){height:18px;animation-delay:.15s}
+  .bars span:nth-child(3){height:14px;animation-delay:.3s} .bars span:nth-child(4){height:22px;animation-delay:.45s}
+  .bars span:nth-child(5){height:12px;animation-delay:.6s}
+  @keyframes pulse{0%,100%{transform:scaleY(.55)}50%{transform:scaleY(1)}}
+  @media (prefers-reduced-motion:reduce){.bars span{animation:none}}
+  .nav-links{display:flex;gap:22px;align-items:center;font-size:14px;color:var(--muted)}
+  .nav-links a:hover{color:var(--ink)}
+  .btn{display:inline-block;background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:10px;
+    font-weight:600;font-size:14px;border:1px solid var(--ink)}
+  .btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+  .btn:hover{opacity:.9}
+
+  /* hero */
+  header{padding:24px 0 8px}
+  .eyebrow{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--panel);
+    border-radius:999px;padding:6px 14px;font-size:12px;font-weight:600;letter-spacing:2px;color:var(--muted);text-transform:uppercase}
+  .eyebrow b{width:7px;height:7px;border-radius:50%;background:var(--ink);display:inline-block}
+  h1{font-size:clamp(34px,6vw,62px);line-height:1.02;letter-spacing:-2px;margin:22px 0 14px;font-weight:800;text-wrap:balance}
+  h1 .g{color:var(--faint)}
+  .lede{font-size:clamp(16px,2.2vw,20px);color:var(--muted);max-width:60ch;margin:0 0 26px}
+  .cta{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+  .term{margin-top:26px;background:var(--code-bg);border-radius:12px;padding:16px 18px;display:inline-flex;gap:10px;
+    font-size:15px;max-width:100%;overflow:auto}
+  .term .p{color:#41d18a} .term .c{color:#d6d6db}
+  .hero-img{margin:34px 0 8px}
+  .hero-img img{width:100%;height:auto;border-radius:var(--radius);border:1px solid var(--line);display:block}
+
+  /* stats */
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:30px 0}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}
+  .stat .n{font-size:30px;font-weight:800;letter-spacing:-1px}
+  .stat .l{font-size:12.5px;color:var(--muted);margin-top:2px}
+  @media (max-width:720px){.stats{grid-template-columns:repeat(2,1fr)}}
+
+  section{padding:44px 0;border-top:1px solid var(--line)}
+  h2{font-size:clamp(24px,3.4vw,34px);letter-spacing:-1px;margin:0 0 6px;font-weight:800}
+  .sub{color:var(--muted);margin:0 0 26px;max-width:62ch}
+
+  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+  @media (max-width:720px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px}
+  .card h3{margin:0 0 6px;font-size:16px}
+  .card p{margin:0;color:var(--muted);font-size:14.5px}
+  .card .k{font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--faint)}
+
+  table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line);
+    border-radius:14px;overflow:hidden;font-size:14.5px}
+  th,td{padding:12px 14px;text-align:left;border-top:1px solid var(--line)}
+  thead th{background:transparent;border-top:0;font-size:12px;letter-spacing:.5px;text-transform:uppercase;color:var(--faint)}
+  td.c,th.c{text-align:center}
+  .yes{color:var(--green);font-weight:700} .no{color:var(--faint)}
+  .price{font-weight:800}
+
+  .bench{display:grid;grid-template-columns:1.3fr 1fr;gap:16px;align-items:center}
+  @media (max-width:720px){.bench{grid-template-columns:1fr}}
+  .metric{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;text-align:center}
+  .metric .big{font-size:46px;font-weight:800;letter-spacing:-2px}
+  .metric .lbl{color:var(--muted);font-size:13.5px;margin-top:4px}
+  .metric.crit .big{color:var(--green)}
+
+  footer{padding:40px 0;border-top:1px solid var(--line);color:var(--muted);font-size:13.5px;
+    display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
+  .pill{display:inline-block;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
+    color:var(--faint);border:1px solid var(--line);border-radius:999px;padding:3px 9px;margin-left:8px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <nav>
+    <a class="brand" href="#top"><span class="bars"><span></span><span></span><span></span><span></span><span></span></span> TythanAI</a>
+    <div class="nav-links">
+      <a href="#engines">Engines</a>
+      <a href="#compare">Community vs Pro</a>
+      <a href="#benchmark">Benchmarks</a>
+      <a href="https://github.com/TythanAI/TythanAIOpen">GitHub</a>
+    </div>
+  </nav>
+
+  <header id="top">
+    <span class="eyebrow"><b></b> AI Security Platform · Community Edition</span>
+    <h1>Enterprise-grade security,<br><span class="g">now open source.</span></h1>
+    <p class="lede">A Web3-native security scanner: SAST, SCA, secrets and IaC — plus first-class
+      auditing for <strong>TON, Solidity/EVM, Solana &amp; CosmWasm</strong>. One CLI. No account.
+      No telemetry. Nothing leaves your machine.</p>
+    <div class="cta">
+      <a class="btn" href="https://github.com/TythanAI/TythanAIOpen">Get it on GitHub →</a>
+      <a class="btn ghost" href="RULES.md">Browse the rules</a>
+    </div>
+    <div class="term mono"><span class="p">$</span><span class="c">pip install tythanai-community &amp;&amp; tythanai scan .</span></div>
+
+    <div class="hero-img">
+      <img src="assets/banner.svg" alt="TythanAI — a critical SQL injection detected and an AI-suggested parameterised fix">
+    </div>
+  </header>
+
+  <div class="stats">
+    <div class="stat"><div class="n">58</div><div class="l">built-in rules, offline</div></div>
+    <div class="stat"><div class="n">10</div><div class="l">languages analysed</div></div>
+    <div class="stat"><div class="n">0%</div><div class="l">false positives on the corpus</div></div>
+    <div class="stat"><div class="n">$0</div><div class="l">no account, no telemetry</div></div>
+  </div>
+
+  <section id="engines">
+    <h2>What's in the Community Edition</h2>
+    <p class="sub">Everything below runs locally, free, with no account — a fast, practical scanner
+      that catches the most common, highest-impact issues.</p>
+    <div class="grid">
+      <div class="card"><div class="k">Web3</div><h3>🪙 Multi-chain contract audit</h3>
+        <p>Native checks for TON (FunC/Tolk), Solidity/EVM, Solana/Anchor and CosmWasm —
+        reentrancy, unchecked calls, missing sender validation, gas-drain and more.</p></div>
+      <div class="card"><div class="k">SAST</div><h3>🔍 Offline rule engine · 10 languages</h3>
+        <p>Python, JS/TS, Go, Java, PHP, Ruby, C#, Kotlin, Rust, C/C++ — weak crypto, unsafe
+        deserialization, TLS-off, eval/exec, command &amp; SQL &amp; XPath &amp; LDAP injection. No network.</p></div>
+      <div class="card"><div class="k">SCA</div><h3>📦 Dependency CVEs</h3>
+        <p>OSV.dev with EPSS exploit-probability ranking and an offline fallback. Optional
+        cargo-audit for Rust when installed.</p></div>
+      <div class="card"><div class="k">Secrets &amp; IaC</div><h3>🔑 Secrets · ☁️ IaC</h3>
+        <p>40+ secret patterns across 27 providers, plus Terraform / Kubernetes / CloudFormation
+        misconfiguration checks.</p></div>
+      <div class="card"><div class="k">Reports</div><h3>📄 SARIF · JSON · HTML</h3>
+        <p>SARIF 2.1.0 with CWE tags and severity scores for GitHub Code Scanning. A
+        <span class="mono">--baseline</span> mode fails CI only on new findings.</p></div>
+      <div class="card"><div class="k">Private</div><h3>🔒 Yours, entirely</h3>
+        <p>Fully local. No sign-up, no phone-home, no telemetry. Ships as a Docker image too.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>See it in action</h2>
+    <p class="sub">Point it at a folder and it streams findings from every engine, with a file:line
+      and the engine that caught each one.</p>
+    <img src="assets/scan-demo.svg" alt="tythanai scan streaming real findings" style="width:100%;border:1px solid var(--line);border-radius:var(--radius)">
+  </section>
+
+  <section id="compare">
+    <h2>Community vs Pro</h2>
+    <p class="sub">The Community Edition is genuinely useful on its own. Teams and audit firms
+      upgrade to Pro for depth, automation and support.</p>
+    <table>
+      <thead><tr><th>Capability</th><th class="c">Community · free</th><th class="c">Pro · <span class="price">$39</span>/dev/mo</th></tr></thead>
+      <tbody>
+        <tr><td>Local CLI — SAST · SCA · Secrets · IaC · Web3</td><td class="c yes">✓</td><td class="c yes">✓</td></tr>
+        <tr><td>Web3 rule packs (TON · Solidity · Solana · CosmWasm)</td><td class="c">Core checks</td><td class="c">Full set + deep analysis</td></tr>
+        <tr><td>AI triage &amp; fix suggestions</td><td class="c no">—</td><td class="c yes">✓</td></tr>
+        <tr><td>Auto-fix pull requests · CI/CD gates</td><td class="c no">—</td><td class="c yes">✓</td></tr>
+        <tr><td>Dependency reachability analysis</td><td class="c no">—</td><td class="c yes">✓</td></tr>
+        <tr><td>Inter-procedural CPG taint (Go · Java · Rust)</td><td class="c no">—</td><td class="c yes">✓</td></tr>
+        <tr><td>Slack &amp; Jira · SaaS dashboard</td><td class="c no">—</td><td class="c yes">✓</td></tr>
+        <tr><td>Support</td><td class="c">Community</td><td class="c">Priority + SLA</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section id="benchmark">
+    <h2>Transparency, not marketing</h2>
+    <p class="sub">The built-in engine ships a labelled corpus so the numbers are reproducible from
+      source: <span class="mono">python -m benchmarks.measure</span>. We publish our blind spots
+      (SSRF, second-order SQL, open redirect) rather than hide them.</p>
+    <div class="bench">
+      <div class="metric crit">
+        <div class="big">0%</div>
+        <div class="lbl">false positives across the whole corpus — a finding you act on, not noise you triage</div>
+      </div>
+      <div class="grid" style="grid-template-columns:1fr">
+        <div class="card"><div class="k">Modelled classes</div><h3>100% recall <span class="pill">68 / 68</span></h3>
+          <p>13 CWE classes the rule engine models, across 10 languages.</p></div>
+        <div class="card"><div class="k">Overall</div><h3>95.8% recall <span class="pill">68 / 71</span></h3>
+          <p>Including taint-only classes that belong to the Pro CPG engine.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div>© 2026 TythanAI Labs · <a href="https://tythanai.io">tythanai.io</a> · Business Source License 1.1</div>
+    <div><a href="https://github.com/TythanAI/TythanAIOpen">GitHub</a> · <a href="RULES.md">Rules</a> · <a href="https://tythanai.io/pricing">Pricing</a></div>
+  </footer>
+
+</div>
+</body>
+</html>

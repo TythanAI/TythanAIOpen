@@ -4,6 +4,21 @@ All notable changes to **TythanAI Community Edition** are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/); versions
 follow [Semantic Versioning](https://semver.org/).
 
+## [1.6.0]
+
+### Added
+- **XPath injection** (CWE-643) detection for Python, Java, PHP and C#, and
+  **LDAP injection** (CWE-90) for Python (escape-aware — flags unescaped filters).
+- Optional external engines, used only when installed: **Slither** (deep
+  Solidity analysis, augments Web3) and **cargo-audit** (RustSec advisories,
+  augments SCA). Absent tools are skipped silently.
+- **Landing page** for GitHub Pages (`docs/index.html`) matching the product UI.
+
+### Changed
+- Corpus grown to 71 pairs across 10 languages and 13 CWE classes. Modelled
+  recall 100% (68/68); overall **95.8%** (68/71); zero false positives.
+- Engine now ships **58 built-in rules**.
+
 ## [1.5.0]
 
 ### Added

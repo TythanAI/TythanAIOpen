@@ -1,0 +1,104 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 470" width="900" height="470" role="img" aria-label="Live terminal: tythanai scan streaming real findings">
+  <title>tythanai scan — live findings from the Community Edition CLI</title>
+  <defs>
+    <clipPath id="win"><rect x="0" y="0" width="900" height="470" rx="14"/></clipPath>
+    <style>
+      .mono { font-family: ui-monospace, "SF Mono", "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace; }
+      .sans { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+      .cmd  { opacity: 0; animation: type .5s ease-out forwards; }
+      .caret { animation: blink 1s step-end infinite; }
+      .row  { opacity: 0; animation: appear .45s ease-out forwards; }
+      .r1{animation-delay:.7s}.r2{animation-delay:1.05s}.r3{animation-delay:1.4s}.r4{animation-delay:1.75s}
+      .r5{animation-delay:2.1s}.r6{animation-delay:2.45s}.sumline{animation-delay:2.95s}.sumbar{animation-delay:3.15s}
+      @keyframes type { to { opacity: 1 } }
+      @keyframes appear { from { opacity: 0 } to { opacity: 1 } }
+      @keyframes blink { 0%,50% { opacity: 1 } 51%,100% { opacity: 0 } }
+      @media (prefers-reduced-motion: reduce) {
+        .cmd,.row { opacity: 1; animation: none }
+        .caret { animation: none; opacity: 0 }
+      }
+    </style>
+  </defs>
+
+  <g clip-path="url(#win)">
+    <rect width="900" height="470" fill="#0d0d10"/>
+    <!-- title bar -->
+    <rect width="900" height="42" fill="#151519"/>
+    <circle cx="24" cy="21" r="6" fill="#ff5f57"/>
+    <circle cx="46" cy="21" r="6" fill="#febc2e"/>
+    <circle cx="68" cy="21" r="6" fill="#28c840"/>
+    <text class="sans" x="450" y="26" font-size="13" fill="#8a8a94" text-anchor="middle">tythanai — community edition</text>
+    <line x1="0" y1="42" x2="900" y2="42" stroke="#26262b"/>
+
+    <!-- command -->
+    <text class="mono cmd" x="26" y="78" font-size="14"><tspan fill="#41d18a">$</tspan><tspan fill="#e7e7ea"> tythanai scan ./your-project</tspan></text>
+    <rect class="caret" x="292" y="66" width="8" height="15" fill="#e7e7ea"/>
+
+    <!-- findings -->
+    <g class="mono" font-size="13.5">
+      <!-- r1 -->
+      <g class="row r1">
+        <circle cx="34" cy="116" r="5" fill="#e5484d"/>
+        <text x="50" y="121"><tspan fill="#ff6b6b" font-weight="700">CRITICAL</tspan><tspan fill="#d6d6db">  AWS access key exposed in source</tspan></text>
+        <text x="620" y="121" fill="#6b6b73">app.py:2</text>
+        <text x="770" y="121" fill="#4b4b53">secrets</text>
+      </g>
+      <!-- r2 -->
+      <g class="row r2">
+        <circle cx="34" cy="148" r="5" fill="#e5484d"/>
+        <text x="50" y="153"><tspan fill="#ff6b6b" font-weight="700">CRITICAL</tspan><tspan fill="#d6d6db">  Reentrancy: state written after external call</tspan></text>
+        <text x="620" y="153" fill="#6b6b73">Vault.sol:5</text>
+        <text x="770" y="153" fill="#4b4b53">web3:evm</text>
+      </g>
+      <!-- r3 -->
+      <g class="row r3">
+        <circle cx="34" cy="180" r="5" fill="#ff8a3d"/>
+        <text x="50" y="185"><tspan fill="#ffab6b" font-weight="700">HIGH</tspan><tspan fill="#d6d6db">      Unchecked low-level .call() return value</tspan></text>
+        <text x="620" y="185" fill="#6b6b73">Vault.sol:5</text>
+        <text x="770" y="185" fill="#4b4b53">solidity</text>
+      </g>
+      <!-- r4 -->
+      <g class="row r4">
+        <circle cx="34" cy="212" r="5" fill="#ff8a3d"/>
+        <text x="50" y="217"><tspan fill="#ffab6b" font-weight="700">HIGH</tspan><tspan fill="#d6d6db">      Missing sender validation (gas-drain risk)</tspan></text>
+        <text x="620" y="217" fill="#6b6b73">main.fc:1</text>
+        <text x="770" y="217" fill="#4b4b53">web3:ton</text>
+      </g>
+      <!-- r5 -->
+      <g class="row r5">
+        <circle cx="34" cy="244" r="5" fill="#ff8a3d"/>
+        <text x="50" y="249"><tspan fill="#ffab6b" font-weight="700">HIGH</tspan><tspan fill="#d6d6db">      S3 bucket missing server-side encryption</tspan></text>
+        <text x="620" y="249" fill="#6b6b73">main.tf</text>
+        <text x="770" y="249" fill="#4b4b53">iac</text>
+      </g>
+      <!-- r6 -->
+      <g class="row r6">
+        <circle cx="34" cy="276" r="5" fill="#e5b53d"/>
+        <text x="50" y="281"><tspan fill="#f2cf6b" font-weight="700">MEDIUM</tspan><tspan fill="#d6d6db">    requests 2.19.0 — sensitive header leak on redirect</tspan></text>
+        <text x="620" y="281" fill="#6b6b73">requirements.txt</text>
+        <text x="770" y="281" fill="#4b4b53">sca</text>
+      </g>
+    </g>
+
+    <line x1="26" y1="308" x2="874" y2="308" stroke="#26262b"/>
+
+    <!-- summary -->
+    <text class="mono row sumline" x="26" y="342" font-size="13.5">
+      <tspan fill="#8a8a94">SCAN SUMMARY </tspan><tspan fill="#5b5b63">&#183;</tspan><tspan fill="#d6d6db"> 12 findings across 5 engines</tspan>
+    </text>
+
+    <g class="row sumbar" transform="translate(26,362)">
+      <!-- risk chip -->
+      <rect x="0" y="0" width="228" height="34" rx="8" fill="#3a1417" stroke="#e5484d" stroke-opacity="0.45"/>
+      <circle cx="20" cy="17" r="5" fill="#e5484d"/>
+      <text class="mono" x="34" y="22" font-size="13" fill="#ff8a8a" font-weight="700">Risk: CRITICAL &#183; 100/100</text>
+      <!-- severity counts -->
+      <text class="mono" x="252" y="22" font-size="13">
+        <tspan fill="#ff6b6b" font-weight="700">3</tspan><tspan fill="#6b6b73"> critical  </tspan><tspan fill="#ffab6b" font-weight="700">6</tspan><tspan fill="#6b6b73"> high  </tspan><tspan fill="#f2cf6b" font-weight="700">3</tspan><tspan fill="#6b6b73"> medium</tspan>
+      </text>
+    </g>
+
+    <text class="mono row sumbar" x="26" y="428" font-size="13"><tspan fill="#41d18a">✓</tspan><tspan fill="#8a8a94"> SARIF · JSON · HTML written · exit code 3 (fails CI on findings)</tspan></text>
+    <text class="mono row sumbar" x="26" y="452" font-size="12" fill="#4b4b53">Local scan · no account · no telemetry · nothing left your machine</text>
+  </g>
+</svg>

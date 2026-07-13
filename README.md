@@ -97,9 +97,9 @@ Everything below runs **locally, free, with no account**:
 
 | Engine | What it does |
 |--------|--------------|
-| 🪙 **Web3 audit** | Native static checks for **TON (FunC/Tolk)**, **Solidity/EVM**, **Solana/Anchor** and **CosmWasm** — reentrancy, unchecked low-level calls, missing sender validation, gas-drain, weak randomness, `tx.origin` auth, unprotected `selfdestruct`, hardcoded keys, and more. |
-| 🔍 **SAST** | A **built-in, offline rule engine** for **10 languages** — Python, JS/TS, Go, Java, PHP, Ruby, C#, Kotlin, Rust and C/C++ — flags weak crypto, unsafe deserialization, disabled TLS, `eval`/`exec`, command injection, dynamic SQL (incl. across a helper function), insecure randomness, XXE, dangerous C functions and user-controlled file paths — no external tools, no network. Full rule list: [docs/RULES.md](docs/RULES.md). Add [Semgrep](https://semgrep.dev) for extra breadth, normalised into the same finding format. |
-| 📦 **SCA** | Dependency CVEs from **[OSV.dev](https://osv.dev)** with EPSS exploit-probability ranking, and an offline known-CVE fallback so you still get results with no network. |
+| 🪙 **Web3 audit** | Native static checks for **TON (FunC/Tolk)**, **Solidity/EVM**, **Solana/Anchor** and **CosmWasm** — reentrancy, unchecked low-level calls, missing sender validation, gas-drain, weak randomness, `tx.origin` auth, unprotected `selfdestruct`, hardcoded keys, and more. Optionally augmented by **[Slither](https://github.com/crytic/slither)** deep analysis when it's installed. |
+| 🔍 **SAST** | A **built-in, offline rule engine** for **10 languages** — Python, JS/TS, Go, Java, PHP, Ruby, C#, Kotlin, Rust and C/C++ — flags weak crypto, unsafe deserialization, disabled TLS, `eval`/`exec`, command / SQL / XPath / LDAP injection (incl. SQL across a helper function), insecure randomness, XXE, dangerous C functions and user-controlled file paths — no external tools, no network. Full rule list: [docs/RULES.md](docs/RULES.md). Add [Semgrep](https://semgrep.dev) for extra breadth. |
+| 📦 **SCA** | Dependency CVEs from **[OSV.dev](https://osv.dev)** with EPSS exploit-probability ranking, and an offline known-CVE fallback so you still get results with no network. Optionally augmented by **cargo-audit** (Rust) when it's installed. |
 | 🔑 **Secrets** | **40+ secret patterns across 27 providers** (AWS, GCP, GitHub, Stripe, Slack, database URIs, private keys, crypto wallets…) plus entropy analysis. |
 | ☁️ **IaC** | Terraform, Kubernetes and CloudFormation misconfiguration checks (public buckets, open security groups, missing encryption…). |
 | 📄 **Reports** | **SARIF 2.1.0** with CWE tags and `security-severity` scores (GitHub Code Scanning ranks alerts correctly), plus **JSON** and a self-contained **HTML** report. |
@@ -269,8 +269,8 @@ python -m benchmarks.measure
 
 | Scope | Recall (TPR) | False positives |
 |-------|:---:|:---:|
-| **Modelled weakness classes** — weak crypto, insecure deserialization, TLS-off, `eval`/`exec`, command injection, dynamic SQL, XSS/SSTI, insecure randomness, XXE, path traversal, dangerous C functions (**11 CWE classes** across **10 languages**: Python · JS/TS · Go · Java · PHP · Ruby · C# · Kotlin · Rust · C/C++) | **100%** (63/63) | **0%** |
-| **Overall, incl. out-of-model taint classes** | **95.5%** (63/66) | **0%** |
+| **Modelled weakness classes** — weak crypto, insecure deserialization, TLS-off, `eval`/`exec`, command / SQL / XPath / LDAP injection, XSS/SSTI, insecure randomness, XXE, path traversal, dangerous C functions (**13 CWE classes** across **10 languages**: Python · JS/TS · Go · Java · PHP · Ruby · C# · Kotlin · Rust · C/C++) | **100%** (68/68) | **0%** |
+| **Overall, incl. out-of-model taint classes** | **95.8%** (68/71) | **0%** |
 
 Two things we do on purpose:
 
@@ -283,7 +283,7 @@ Two things we do on purpose:
 
 > The corpus is maintained in-repo alongside the rules — authoring is disclosed,
 > not hidden. The Community Edition also carries a full unit-test suite:
-> `pytest tests/ -v` (**144 tests**).
+> `pytest tests/ -v` (**161 tests**).
 
 ---
 

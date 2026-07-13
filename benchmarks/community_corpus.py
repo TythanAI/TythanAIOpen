@@ -245,6 +245,26 @@ CASES = [
      "MD5_Init(&ctx);\n",
      "SHA256_Init(&ctx);\n"),
 
+    # ── XPath injection (CWE-643) ─────────────────────────────────────────────
+    ("py-xpath", "python", "CWE-643",
+     "def find(tree, name):\n    return tree.xpath(f\"//user[@name='{name}']\")\n",
+     "def find(tree, name):\n    return tree.xpath(\"//user[@name=$name]\", name=name)\n"),
+    ("java-xpath", "java", "CWE-643",
+     "Object r = xpath.evaluate(\"//user[@id='\" + id + \"']\", doc);\n",
+     "Object r = xpath.evaluate(\"//user[@id=$id]\", doc);\n"),
+    ("php-xpath", "php", "CWE-643",
+     "<?php\n$nodes = $xml->xpath(\"//user[@name='$name']\");\n",
+     "<?php\n$nodes = $xml->xpath(\"//user[@active='1']\");\n"),
+    ("cs-xpath", "csharp", "CWE-643",
+     "var n = doc.SelectNodes(\"//user[@id='\" + id + \"']\");\n",
+     "var n = doc.SelectNodes(\"//user[@active='1']\");\n"),
+
+    # ── LDAP injection (CWE-90) ───────────────────────────────────────────────
+    ("py-ldap", "python", "CWE-90",
+     "def find(conn, base, user):\n    return conn.search_s(base, SCOPE, \"(uid=\" + user + \")\")\n",
+     "import ldap.filter\ndef find(conn, base, user):\n"
+     "    return conn.search_s(base, SCOPE, \"(uid=\" + ldap.filter.escape_filter_chars(user) + \")\")\n"),
+
     # ── SQL tainted across a function boundary within one module ──────────────
     ("py-crossfunc-sql", "python", "CWE-89",
      "def query(cur, sql):\n    cur.execute(sql)\n"

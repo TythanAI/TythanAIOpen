@@ -71,6 +71,8 @@ RULES: Dict[str, Dict[str, str]] = {
     "TYT-P013": {"cwe": "CWE-611", "severity": "MEDIUM", "title": "XML parsed without external-entity protection (XXE)"},
     "TYT-P014": {"cwe": "CWE-22",  "severity": "HIGH",   "title": "User-controlled path passed to open() (traversal)"},
     "TYT-P015": {"cwe": "CWE-89",  "severity": "HIGH",   "title": "Dynamic SQL passed to a query helper (injection)"},
+    "TYT-P016": {"cwe": "CWE-643", "severity": "HIGH",   "title": "XPath built from dynamic string (injection)"},
+    "TYT-P017": {"cwe": "CWE-90",  "severity": "HIGH",   "title": "LDAP filter built from unescaped input (injection)"},
     # JavaScript / TypeScript
     "TYT-J001": {"cwe": "CWE-95",  "severity": "HIGH",   "title": "Code injection via eval()"},
     "TYT-J002": {"cwe": "CWE-78",  "severity": "HIGH",   "title": "Command execution with interpolated input"},
@@ -88,12 +90,14 @@ RULES: Dict[str, Dict[str, str]] = {
     "TYT-A003": {"cwe": "CWE-89",  "severity": "HIGH",   "title": "SQL built from string concatenation (injection)"},
     "TYT-A004": {"cwe": "CWE-502", "severity": "HIGH",   "title": "Unsafe Java deserialization (ObjectInputStream)"},
     "TYT-A005": {"cwe": "CWE-330", "severity": "MEDIUM", "title": "Insecure randomness for a security value (use SecureRandom)"},
+    "TYT-A006": {"cwe": "CWE-643", "severity": "HIGH",   "title": "XPath built from string concatenation (injection)"},
     # PHP
     "TYT-H001": {"cwe": "CWE-327", "severity": "MEDIUM", "title": "Weak hash (md5/sha1)"},
     "TYT-H002": {"cwe": "CWE-78",  "severity": "HIGH",   "title": "Command execution with variable input"},
     "TYT-H003": {"cwe": "CWE-89",  "severity": "HIGH",   "title": "SQL built from interpolated/concatenated string"},
     "TYT-H004": {"cwe": "CWE-502", "severity": "HIGH",   "title": "Unsafe deserialization (unserialize)"},
     "TYT-H005": {"cwe": "CWE-95",  "severity": "HIGH",   "title": "Code injection via eval()"},
+    "TYT-H006": {"cwe": "CWE-643", "severity": "HIGH",   "title": "XPath built from interpolated/concatenated string"},
     # Ruby
     "TYT-R001": {"cwe": "CWE-327", "severity": "MEDIUM", "title": "Weak hash (Digest::MD5/SHA1)"},
     "TYT-R002": {"cwe": "CWE-78",  "severity": "HIGH",   "title": "Command execution with interpolation"},
@@ -105,6 +109,7 @@ RULES: Dict[str, Dict[str, str]] = {
     "TYT-C002": {"cwe": "CWE-78",  "severity": "HIGH",   "title": "Command execution with concatenated input"},
     "TYT-C003": {"cwe": "CWE-89",  "severity": "HIGH",   "title": "SQL built from concatenation/interpolation"},
     "TYT-C004": {"cwe": "CWE-502", "severity": "HIGH",   "title": "Unsafe deserialization (BinaryFormatter)"},
+    "TYT-C005": {"cwe": "CWE-643", "severity": "HIGH",   "title": "XPath built from concatenation/interpolation"},
     # Kotlin
     "TYT-K001": {"cwe": "CWE-327", "severity": "MEDIUM", "title": "Weak hash/cipher (MD5/SHA-1/DES/ECB)"},
     "TYT-K002": {"cwe": "CWE-78",  "severity": "HIGH",   "title": "Command execution with concatenated/interpolated input"},
@@ -372,6 +377,16 @@ class _PyVisitor(ast.NodeVisitor):
             if isinstance(first, ast.Call) and _REQUEST_ACCESS.search(_dotted(first.func)):
                 self._emit("TYT-P014", node, "validate and confine the path (basename + safe root)")
 
+        # TYT-P016 XPath injection (lxml .xpath with a runtime-built expression)
+        if attr == "xpath" and node.args and _is_dynamic_str(node.args[0]):
+            self._emit("TYT-P016", node, "use XPath variables (.xpath(expr, var=value)), not string building")
+
+        # TYT-P017 LDAP filter built from unescaped input
+        if attr in ("search_s", "search_ext_s", "search_ext"):
+            if any(_is_dynamic_str(a) for a in node.args) \
+                    and not _has_escape(node, ("escape_filter_chars", "escape_dn_chars")):
+                self._emit("TYT-P017", node, "escape values with ldap.filter.escape_filter_chars()")
+
         # TYT-P015 dynamic SQL flowing into a query-helper parameter
         if name in self.sinks:
             params, sink_params = self.sinks[name]
@@ -386,6 +401,17 @@ class _PyVisitor(ast.NodeVisitor):
                     break
 
         self.generic_visit(node)
+
+
+def _has_escape(node: ast.Call, names: tuple) -> bool:
+    """True if any argument subtree calls one of the given escaping helpers."""
+    for arg in node.args:
+        for sub in ast.walk(arg):
+            if isinstance(sub, ast.Call):
+                fn = _dotted(sub.func).split(".")[-1]
+                if fn in names:
+                    return True
+    return False
 
 
 def _is_false(node: ast.AST) -> bool:
@@ -434,6 +460,7 @@ _JAVA_RULES: List[tuple] = [
     ("TYT-A003", re.compile(r"\.(executeQuery|executeUpdate|execute)\s*\(\s*\"[^\"]*\"\s*\+")),
     ("TYT-A004", re.compile(r"new\s+ObjectInputStream\s*\(")),
     ("TYT-A005", re.compile(r"new\s+Random\s*\(")),
+    ("TYT-A006", re.compile(r"\.(evaluate|compile)\s*\(\s*\"[^\"]*\"\s*\+")),
 ]
 
 _PHP_RULES: List[tuple] = [
@@ -442,6 +469,7 @@ _PHP_RULES: List[tuple] = [
     ("TYT-H003", re.compile(r"(->query|->exec|mysqli_query)\s*\(\s*[\"'][^\"']*(\$\w|[\"']\s*\.\s*\$)")),
     ("TYT-H001", re.compile(r"(^|[^.\w>])(md5|sha1)\s*\(")),
     ("TYT-H004", re.compile(r"\bunserialize\s*\(")),
+    ("TYT-H006", re.compile(r"->(xpath|evaluate)\s*\(\s*[\"'].*(\$\w|[\"']\s*\.\s*\$)")),
 ]
 
 _RUBY_RULES: List[tuple] = [
@@ -457,6 +485,7 @@ _CS_RULES: List[tuple] = [
     ("TYT-C002", re.compile(r"Process\.Start\s*\([^)]*\+")),
     ("TYT-C003", re.compile(r"(new\s+SqlCommand\s*\(|CommandText\s*=)\s*(\$@?\"|@?\"[^\"]*\"\s*\+)")),
     ("TYT-C004", re.compile(r"new\s+BinaryFormatter\s*\(")),
+    ("TYT-C005", re.compile(r"\.(SelectNodes|SelectSingleNode)\s*\(\s*(\$@?\"|@?\"[^\"]*\"\s*\+)")),
 ]
 
 _KOTLIN_RULES: List[tuple] = [

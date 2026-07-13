@@ -189,6 +189,19 @@ class CommunityScanner:
                 self._result.errors.append(f"SCA: {exc2}")
                 logger.debug("SCA error: %s", exc2, exc_info=True)
 
+        # Optional: cargo-audit (RustSec) when the tool is installed and a
+        # Cargo.lock is present. Purely additive — skipped silently otherwise.
+        try:
+            from scanners.external_tools import CargoAuditScanner
+            cargo = CargoAuditScanner()
+            if cargo.available():
+                self._result.sca_findings.extend(
+                    _normalise(f, source="sca:cargo-audit")
+                    for f in cargo.scan_directory(self.target)
+                )
+        except Exception as exc:
+            logger.debug("cargo-audit error: %s", exc, exc_info=True)
+
     # ── Secrets ───────────────────────────────────────────────────────────────
 
     def _run_secrets(self) -> None:
@@ -263,6 +276,19 @@ class CommunityScanner:
                 findings.append(_normalise(f, source=f"web3:{chain.lower()}"))
         except Exception as exc:
             self._result.errors.append(f"Web3/MultiChain: {exc}")
+
+        # Optional: Slither deep Solidity analysis when the tool is installed.
+        # Purely additive — skipped silently if slither is not on PATH.
+        try:
+            from scanners.external_tools import SlitherScanner
+            slither = SlitherScanner()
+            if slither.available():
+                findings.extend(
+                    _normalise(f, source="web3:slither")
+                    for f in slither.scan_directory(self.target)
+                )
+        except Exception as exc:
+            logger.debug("slither error: %s", exc, exc_info=True)
 
         self._result.web3_findings = findings
 

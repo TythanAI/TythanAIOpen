@@ -118,6 +118,30 @@ def test_kotlin_rust_cpp_positive(tmp_path, name, code, cwe):
     assert cwe in _cwes(findings), f"{name}: expected {cwe}, got {findings}"
 
 
+# ── XPath (CWE-643) and LDAP (CWE-90) injection ───────────────────────────────
+
+@pytest.mark.parametrize("name,code,cwe", [
+    ("xp.py", "def f(t, n):\n    return t.xpath(f\"//u[@n='{n}']\")\n", "CWE-643"),
+    ("xp.java", "Object r = xpath.evaluate(\"//u[@id='\" + id + \"']\", d);\n", "CWE-643"),
+    ("xp.php", "<?php\n$n = $xml->xpath(\"//u[@n='$name']\");\n", "CWE-643"),
+    ("xp.cs", "var n = doc.SelectNodes(\"//u[@id='\" + id + \"']\");\n", "CWE-643"),
+    ("ld.py", "def f(c, b, u):\n    return c.search_s(b, S, \"(uid=\" + u + \")\")\n", "CWE-90"),
+])
+def test_xpath_ldap_positive(tmp_path, name, code, cwe):
+    findings = _scan(tmp_path, name, code)
+    assert cwe in _cwes(findings), f"{name}: expected {cwe}, got {findings}"
+
+
+@pytest.mark.parametrize("name,code", [
+    ("okxp.py", "def f(t, n):\n    return t.xpath(\"//u[@n=$n]\", n=n)\n"),
+    ("okxp.php", "<?php\n$n = $xml->xpath(\"//u[@active='1']\");\n"),
+    ("okxp.cs", "var n = doc.SelectNodes(\"//u[@active='1']\");\n"),
+    ("okld.py", "import ldap.filter\ndef f(c, b, u):\n    return c.search_s(b, S, \"(uid=\" + ldap.filter.escape_filter_chars(u) + \")\")\n"),
+])
+def test_xpath_ldap_negative(tmp_path, name, code):
+    assert _scan(tmp_path, name, code) == [], f"false positive in {name}"
+
+
 # ── Cross-function (intra-module) dynamic SQL ─────────────────────────────────
 
 def test_crossfunc_sql_flagged(tmp_path):
