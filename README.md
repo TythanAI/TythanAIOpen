@@ -97,11 +97,11 @@ Everything below runs **locally, free, with no account**:
 | Engine | What it does |
 |--------|--------------|
 | 🪙 **Web3 audit** | Native static checks for **TON (FunC/Tolk)**, **Solidity/EVM**, **Solana/Anchor** and **CosmWasm** — reentrancy, unchecked low-level calls, missing sender validation, gas-drain, weak randomness, `tx.origin` auth, unprotected `selfdestruct`, hardcoded keys, and more. |
-| 🔍 **SAST** | A **built-in, offline rule engine** for **Python, JS/TS, Go and Java** flags weak crypto, unsafe deserialization, disabled TLS, `eval`/`exec`, command injection, dynamic SQL, insecure randomness, XXE and user-controlled file paths — no external tools, no network. Add [Semgrep](https://semgrep.dev) for extra breadth (Rust, PHP, Ruby, C/C++…), normalised into the same finding format. |
+| 🔍 **SAST** | A **built-in, offline rule engine** for **Python, JS/TS, Go, Java, PHP, Ruby and C#** flags weak crypto, unsafe deserialization, disabled TLS, `eval`/`exec`, command injection, dynamic SQL (incl. across a helper function), insecure randomness, XXE and user-controlled file paths — no external tools, no network. Add [Semgrep](https://semgrep.dev) for extra breadth (Rust, Kotlin, C/C++…), normalised into the same finding format. |
 | 📦 **SCA** | Dependency CVEs from **[OSV.dev](https://osv.dev)** with EPSS exploit-probability ranking, and an offline known-CVE fallback so you still get results with no network. |
 | 🔑 **Secrets** | **40+ secret patterns across 27 providers** (AWS, GCP, GitHub, Stripe, Slack, database URIs, private keys, crypto wallets…) plus entropy analysis. |
 | ☁️ **IaC** | Terraform, Kubernetes and CloudFormation misconfiguration checks (public buckets, open security groups, missing encryption…). |
-| 📄 **Reports** | **SARIF 2.1.0** (for GitHub Code Scanning), plus **JSON** and a self-contained **HTML** report. |
+| 📄 **Reports** | **SARIF 2.1.0** with CWE tags and `security-severity` scores (GitHub Code Scanning ranks alerts correctly), plus **JSON** and a self-contained **HTML** report. |
 | 🔒 **Private by design** | Fully local. No account, no phone-home, no telemetry. |
 
 > The Community Edition is a fast, practical scanner that catches the most common,
@@ -243,21 +243,21 @@ python -m benchmarks.measure
 
 | Scope | Recall (TPR) | False positives |
 |-------|:---:|:---:|
-| **Modelled weakness classes** — weak crypto, insecure deserialization, TLS-off, `eval`/`exec`, command injection, dynamic SQL, XSS/SSTI, insecure randomness, XXE, path traversal (**10 CWE classes** across Python · JS/TS · Go · Java) | **100%** (38/38) | **0%** |
-| **Overall, incl. out-of-model taint classes** | **92.7%** (38/41) | **0%** |
+| **Modelled weakness classes** — weak crypto, insecure deserialization, TLS-off, `eval`/`exec`, command injection, dynamic SQL, XSS/SSTI, insecure randomness, XXE, path traversal (**10 CWE classes** across **7 languages**: Python · JS/TS · Go · Java · PHP · Ruby · C#) | **100%** (53/53) | **0%** |
+| **Overall, incl. out-of-model taint classes** | **94.6%** (53/56) | **0%** |
 
 Two things we do on purpose:
 
 - **Zero false positives across the whole corpus** — a finding you act on, not
   noise you triage.
-- **We name our blind spots.** SSRF, SQL tainted across a function boundary and
-  open redirect need inter-procedural data-flow (taint) tracking — that's the
+- **We name our blind spots.** SSRF, second-order (stored) SQL and open redirect
+  need inter-procedural / cross-request data-flow (taint) tracking — that's the
   **Pro** CPG engine. The rule engine honestly scores 0% on those rather than
   guessing.
 
 > The corpus is maintained in-repo alongside the rules — authoring is disclosed,
 > not hidden. The Community Edition also carries a full unit-test suite:
-> `pytest tests/ -v` (**105 tests**).
+> `pytest tests/ -v` (**124 tests**).
 
 ---
 
@@ -290,5 +290,7 @@ If TythanAI saved you from shipping a vulnerability, a ⭐ helps other people fi
 non-production, evaluation and personal use, and for organisations with three or
 fewer developers. Converts to **Apache 2.0 on 2029-06-01**. For commercial terms,
 see [tythanai.io/pricing](https://tythanai.io/pricing).
+
+Release notes live in [CHANGELOG.md](CHANGELOG.md).
 
 <p align="center"><sub>© 2026 TythanAI Labs · <a href="https://tythanai.io">tythanai.io</a></sub></p>

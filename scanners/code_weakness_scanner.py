@@ -10,8 +10,10 @@ Dependency-free static checks for the weakness classes that a taint engine
 verification, code/command injection, dynamic SQL, weak randomness, XXE,
 direct-user-input file access). Python is analysed with the `ast` module
 (structural, low false-positive) including a light *local* def-use pass so SQL
-built into a variable and then executed is still caught. JavaScript/TypeScript,
-Go and Java are analysed with a small set of conservative line patterns.
+built into a variable and then executed is still caught, plus an intra-module
+pass that flags dynamic SQL passed into a query-helper function. JavaScript/
+TypeScript, Go, Java, PHP, Ruby and C# are analysed with a small set of
+conservative, comment-aware line patterns.
 
 This runs with **no network and no external tools**, so `tythanai scan`
 always produces SAST results even when Semgrep is not installed. When Semgrep
@@ -33,7 +35,11 @@ _PY_EXTS = {".py", ".pyi"}
 _JS_EXTS = {".js", ".jsx", ".mjs", ".cjs", ".ts", ".tsx"}
 _GO_EXTS = {".go"}
 _JAVA_EXTS = {".java"}
-_ALL_EXTS = _PY_EXTS | _JS_EXTS | _GO_EXTS | _JAVA_EXTS
+_PHP_EXTS = {".php", ".php5", ".phtml"}
+_RUBY_EXTS = {".rb"}
+_CS_EXTS = {".cs"}
+_ALL_EXTS = (_PY_EXTS | _JS_EXTS | _GO_EXTS | _JAVA_EXTS
+             | _PHP_EXTS | _RUBY_EXTS | _CS_EXTS)
 _SKIP_DIRS = {
     ".git", "__pycache__", "node_modules", ".venv", "venv", "env",
     "dist", "build", ".tox", ".mypy_cache", ".pytest_cache", "site-packages",
@@ -60,6 +66,7 @@ RULES: Dict[str, Dict[str, str]] = {
     "TYT-P012": {"cwe": "CWE-330", "severity": "MEDIUM", "title": "Insecure randomness for a security value"},
     "TYT-P013": {"cwe": "CWE-611", "severity": "MEDIUM", "title": "XML parsed without external-entity protection (XXE)"},
     "TYT-P014": {"cwe": "CWE-22",  "severity": "HIGH",   "title": "User-controlled path passed to open() (traversal)"},
+    "TYT-P015": {"cwe": "CWE-89",  "severity": "HIGH",   "title": "Dynamic SQL passed to a query helper (injection)"},
     # JavaScript / TypeScript
     "TYT-J001": {"cwe": "CWE-95",  "severity": "HIGH",   "title": "Code injection via eval()"},
     "TYT-J002": {"cwe": "CWE-78",  "severity": "HIGH",   "title": "Command execution with interpolated input"},
@@ -77,6 +84,23 @@ RULES: Dict[str, Dict[str, str]] = {
     "TYT-A003": {"cwe": "CWE-89",  "severity": "HIGH",   "title": "SQL built from string concatenation (injection)"},
     "TYT-A004": {"cwe": "CWE-502", "severity": "HIGH",   "title": "Unsafe Java deserialization (ObjectInputStream)"},
     "TYT-A005": {"cwe": "CWE-330", "severity": "MEDIUM", "title": "Insecure randomness for a security value (use SecureRandom)"},
+    # PHP
+    "TYT-H001": {"cwe": "CWE-327", "severity": "MEDIUM", "title": "Weak hash (md5/sha1)"},
+    "TYT-H002": {"cwe": "CWE-78",  "severity": "HIGH",   "title": "Command execution with variable input"},
+    "TYT-H003": {"cwe": "CWE-89",  "severity": "HIGH",   "title": "SQL built from interpolated/concatenated string"},
+    "TYT-H004": {"cwe": "CWE-502", "severity": "HIGH",   "title": "Unsafe deserialization (unserialize)"},
+    "TYT-H005": {"cwe": "CWE-95",  "severity": "HIGH",   "title": "Code injection via eval()"},
+    # Ruby
+    "TYT-R001": {"cwe": "CWE-327", "severity": "MEDIUM", "title": "Weak hash (Digest::MD5/SHA1)"},
+    "TYT-R002": {"cwe": "CWE-78",  "severity": "HIGH",   "title": "Command execution with interpolation"},
+    "TYT-R003": {"cwe": "CWE-89",  "severity": "HIGH",   "title": "SQL built from string interpolation"},
+    "TYT-R004": {"cwe": "CWE-502", "severity": "HIGH",   "title": "Unsafe deserialization (Marshal/YAML.load)"},
+    "TYT-R005": {"cwe": "CWE-95",  "severity": "HIGH",   "title": "Code injection via eval()"},
+    # C#
+    "TYT-C001": {"cwe": "CWE-327", "severity": "MEDIUM", "title": "Weak hash/cipher (MD5/SHA-1/DES)"},
+    "TYT-C002": {"cwe": "CWE-78",  "severity": "HIGH",   "title": "Command execution with concatenated input"},
+    "TYT-C003": {"cwe": "CWE-89",  "severity": "HIGH",   "title": "SQL built from concatenation/interpolation"},
+    "TYT-C004": {"cwe": "CWE-502", "severity": "HIGH",   "title": "Unsafe deserialization (BinaryFormatter)"},
 }
 
 
@@ -168,11 +192,43 @@ def _collect_dynamic_vars(body: List[ast.stmt]) -> Set[str]:
     return names
 
 
+_SQL_SINK_METHODS = {"execute", "executemany", "executescript"}
+
+
+def _collect_sql_sink_funcs(tree: ast.AST) -> Dict[str, tuple]:
+    """Map module-level function name -> (param_names, sink_param_names).
+
+    A *sink* parameter is one passed as the sole argument to a SQL execute()
+    call inside the function body — i.e. the helper runs whatever SQL string it
+    is handed, unparameterised. Callers that pass a dynamic string into such a
+    parameter are then flagged (light intra-module taint). Helpers that
+    parameterise (execute(sql, args), two args) are NOT sinks, so the common
+    safe pattern never triggers.
+    """
+    sinks: Dict[str, tuple] = {}
+    for node in ast.walk(tree):
+        if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            continue
+        params = [a.arg for a in node.args.args]
+        sink_params: Set[str] = set()
+        for sub in ast.walk(node):
+            if isinstance(sub, ast.Call) and isinstance(sub.func, ast.Attribute) \
+                    and sub.func.attr in _SQL_SINK_METHODS \
+                    and len(sub.args) == 1 and not sub.keywords \
+                    and isinstance(sub.args[0], ast.Name) and sub.args[0].id in params:
+                sink_params.add(sub.args[0].id)
+        if sink_params:
+            sinks[node.name] = (params, sink_params)
+    return sinks
+
+
 class _PyVisitor(ast.NodeVisitor):
-    def __init__(self, file: str, add: Callable[[dict], None], src_lines: List[str]):
+    def __init__(self, file: str, add: Callable[[dict], None], src_lines: List[str],
+                 sinks: Optional[Dict[str, tuple]] = None):
         self.file = file
         self.add = add
         self.lines = src_lines
+        self.sinks = sinks or {}
         self.scopes: List[Set[str]] = []          # stack of dynamic-var sets
 
     def _ev(self, node: ast.AST) -> str:
@@ -299,6 +355,19 @@ class _PyVisitor(ast.NodeVisitor):
             if isinstance(first, ast.Call) and _REQUEST_ACCESS.search(_dotted(first.func)):
                 self._emit("TYT-P014", node, "validate and confine the path (basename + safe root)")
 
+        # TYT-P015 dynamic SQL flowing into a query-helper parameter
+        if name in self.sinks:
+            params, sink_params = self.sinks[name]
+            for sp in sink_params:
+                idx = params.index(sp)
+                arg = node.args[idx] if idx < len(node.args) else None
+                if arg is None:
+                    arg = next((kw.value for kw in node.keywords if kw.arg == sp), None)
+                if arg is not None and (_is_dynamic_str(arg) or self._is_dynamic_var(arg)):
+                    self._emit("TYT-P015", node,
+                               f"dynamic SQL passed to '{name}()' — parameterise at the call site")
+                    break
+
         self.generic_visit(node)
 
 
@@ -320,7 +389,8 @@ def _scan_python(text: str, file: str) -> List[dict]:
         tree = ast.parse(text)
     except SyntaxError:
         return out
-    _PyVisitor(file, out.append, text.splitlines()).visit(tree)
+    sinks = _collect_sql_sink_funcs(tree)
+    _PyVisitor(file, out.append, text.splitlines(), sinks).visit(tree)
     return out
 
 
@@ -347,6 +417,29 @@ _JAVA_RULES: List[tuple] = [
     ("TYT-A003", re.compile(r"\.(executeQuery|executeUpdate|execute)\s*\(\s*\"[^\"]*\"\s*\+")),
     ("TYT-A004", re.compile(r"new\s+ObjectInputStream\s*\(")),
     ("TYT-A005", re.compile(r"new\s+Random\s*\(")),
+]
+
+_PHP_RULES: List[tuple] = [
+    ("TYT-H005", re.compile(r"(^|[^.\w])eval\s*\(")),
+    ("TYT-H002", re.compile(r"\b(system|exec|shell_exec|passthru|popen|proc_open)\s*\([^)]*(\$|\.)")),
+    ("TYT-H003", re.compile(r"(->query|->exec|mysqli_query)\s*\(\s*[\"'][^\"']*(\$\w|[\"']\s*\.\s*\$)")),
+    ("TYT-H001", re.compile(r"(^|[^.\w>])(md5|sha1)\s*\(")),
+    ("TYT-H004", re.compile(r"\bunserialize\s*\(")),
+]
+
+_RUBY_RULES: List[tuple] = [
+    ("TYT-R005", re.compile(r"(^|[^.\w:])eval\s*[\s(]")),
+    ("TYT-R002", re.compile(r"(`[^`]*#\{|\b(system|exec)\s*\([^)]*#\{|%x[\{(][^})]*#\{)")),
+    ("TYT-R003", re.compile(r"\.(execute|where|find_by_sql|from|order|group)\s*\(\s*[\"'].*#\{")),
+    ("TYT-R004", re.compile(r"(Marshal\.load|YAML\.load)\s*\(")),
+    ("TYT-R001", re.compile(r"Digest::(MD5|SHA1)\b")),
+]
+
+_CS_RULES: List[tuple] = [
+    ("TYT-C001", re.compile(r"(MD5|SHA1|DES|TripleDES)\.Create\s*\(|new\s+(MD5|SHA1|DES)CryptoServiceProvider")),
+    ("TYT-C002", re.compile(r"Process\.Start\s*\([^)]*\+")),
+    ("TYT-C003", re.compile(r"(new\s+SqlCommand\s*\(|CommandText\s*=)\s*(\$@?\"|@?\"[^\"]*\"\s*\+)")),
+    ("TYT-C004", re.compile(r"new\s+BinaryFormatter\s*\(")),
 ]
 
 _COMMENT = re.compile(r"^\s*(//|\*|/\*|#)")
@@ -383,6 +476,18 @@ def _scan_java(text: str, file: str) -> List[dict]:
     return _scan_lines(text, file, _JAVA_RULES, gated={"TYT-A005": _JAVA_A005_CONTEXT})
 
 
+def _scan_php(text: str, file: str) -> List[dict]:
+    return _scan_lines(text, file, _PHP_RULES)
+
+
+def _scan_ruby(text: str, file: str) -> List[dict]:
+    return _scan_lines(text, file, _RUBY_RULES)
+
+
+def _scan_csharp(text: str, file: str) -> List[dict]:
+    return _scan_lines(text, file, _CS_RULES)
+
+
 # ── Public scanner ────────────────────────────────────────────────────────────
 
 class CodeWeaknessScanner:
@@ -408,6 +513,12 @@ class CodeWeaknessScanner:
             return _scan_go(text, str(p))
         if ext in _JAVA_EXTS:
             return _scan_java(text, str(p))
+        if ext in _PHP_EXTS:
+            return _scan_php(text, str(p))
+        if ext in _RUBY_EXTS:
+            return _scan_ruby(text, str(p))
+        if ext in _CS_EXTS:
+            return _scan_csharp(text, str(p))
         return []
 
     def scan_directory(self, directory: str) -> List[dict]:

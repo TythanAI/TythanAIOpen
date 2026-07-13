@@ -160,6 +160,61 @@ CASES = [
     ("java-weak-random", "java", "CWE-330",
      "String token = String.valueOf(new Random().nextInt());\n",
      "String token = String.valueOf(new SecureRandom().nextInt());\n"),
+
+    # ── PHP ───────────────────────────────────────────────────────────────────
+    ("php-md5", "php", "CWE-327",
+     "<?php\n$hash = md5($password);\n",
+     "<?php\n$hash = password_hash($password, PASSWORD_DEFAULT);\n"),
+    ("php-command", "php", "CWE-78",
+     "<?php\nsystem('ping ' . $host);\n",
+     "<?php\nsystem(escapeshellcmd('ping'));\n"),
+    ("php-sql", "php", "CWE-89",
+     "<?php\n$db->query(\"SELECT * FROM users WHERE id = $id\");\n",
+     "<?php\n$stmt = $db->prepare(\"SELECT * FROM users WHERE id = ?\");\n"),
+    ("php-unserialize", "php", "CWE-502",
+     "<?php\n$obj = unserialize($_GET['data']);\n",
+     "<?php\n$obj = json_decode($_GET['data'], true);\n"),
+    ("php-eval", "php", "CWE-95",
+     "<?php\neval($_GET['code']);\n",
+     "<?php\n$result = $registry[$_GET['code']]();\n"),
+
+    # ── Ruby ──────────────────────────────────────────────────────────────────
+    ("rb-md5", "ruby", "CWE-327",
+     "digest = Digest::MD5.hexdigest(data)\n",
+     "digest = Digest::SHA256.hexdigest(data)\n"),
+    ("rb-command", "ruby", "CWE-78",
+     "system(\"ls #{params[:dir]}\")\n",
+     "system(\"ls\", params[:dir])\n"),
+    ("rb-sql", "ruby", "CWE-89",
+     "User.where(\"name = '#{params[:name]}'\")\n",
+     "User.where(\"name = ?\", params[:name])\n"),
+    ("rb-marshal", "ruby", "CWE-502",
+     "obj = Marshal.load(untrusted)\n",
+     "obj = JSON.parse(untrusted)\n"),
+    ("rb-eval", "ruby", "CWE-95",
+     "eval(params[:expr])\n",
+     "result = REGISTRY.fetch(params[:expr]).call\n"),
+
+    # ── C# ────────────────────────────────────────────────────────────────────
+    ("cs-md5", "csharp", "CWE-327",
+     "var hash = MD5.Create().ComputeHash(data);\n",
+     "var hash = SHA256.Create().ComputeHash(data);\n"),
+    ("cs-command", "csharp", "CWE-78",
+     "Process.Start(\"ping \" + host);\n",
+     "Process.Start(\"ping\", host);\n"),
+    ("cs-sql", "csharp", "CWE-89",
+     "var cmd = new SqlCommand(\"SELECT * FROM u WHERE id = \" + id, conn);\n",
+     "var cmd = new SqlCommand(\"SELECT * FROM u WHERE id = @id\", conn);\n"),
+    ("cs-binaryformatter", "csharp", "CWE-502",
+     "var obj = new BinaryFormatter().Deserialize(stream);\n",
+     "var obj = JsonSerializer.Deserialize<Foo>(stream);\n"),
+
+    # ── SQL tainted across a function boundary within one module ──────────────
+    ("py-crossfunc-sql", "python", "CWE-89",
+     "def query(cur, sql):\n    cur.execute(sql)\n"
+     "def handler(cur, uid):\n    query(cur, f\"SELECT * FROM u WHERE id = {uid}\")\n",
+     "def query(cur, sql, args):\n    cur.execute(sql, args)\n"
+     "def handler(cur, uid):\n    query(cur, \"SELECT * FROM u WHERE id = ?\", (uid,))\n"),
 ]
 
 # Classes the *rule-based* engine intentionally does NOT model. These require
@@ -173,12 +228,11 @@ COVERAGE_GAPS = [
      "import requests\ndef fetch(req):\n    return requests.get(req.args.get('url')).text\n",
      "import requests\ndef fetch(req):\n    if not allowed(req.args.get('url')):\n"
      "        raise ValueError('blocked')\n    return requests.get(req.args.get('url')).text\n"),
-    # SQL tainted across a function boundary (needs inter-procedural flow).
-    ("gap-crossfunc-sql", "python", "CWE-89",
-     "def query(cur, sql):\n    cur.execute(sql)\n"
-     "def handler(cur, uid):\n    query(cur, f\"SELECT * FROM u WHERE id = {uid}\")\n",
-     "def query(cur, sql, args):\n    cur.execute(sql, args)\n"
-     "def handler(cur, uid):\n    query(cur, \"SELECT * FROM u WHERE id = ?\", (uid,))\n"),
+    # Second-order SQL — tainted value flows through a data store, then is
+    # executed on a later read. Needs cross-request / stored-taint tracking.
+    ("gap-second-order-sql", "python", "CWE-89",
+     "def run(cur):\n    row = cur.execute('SELECT payload FROM jobs').fetchone()\n    cur.execute(row[0])\n",
+     "def run(cur):\n    row = cur.execute('SELECT payload FROM jobs').fetchone()\n    dispatch(row[0])\n"),
     # Open redirect — destination validation is a semantic property.
     ("gap-open-redirect", "python", "CWE-601",
      "from flask import redirect, request\ndef go():\n    return redirect(request.args.get('next'))\n",

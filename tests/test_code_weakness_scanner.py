@@ -76,6 +76,44 @@ def test_java_positive(tmp_path, name, code, cwe):
     assert cwe in _cwes(findings), f"{name}: expected {cwe}, got {findings}"
 
 
+# ── Positive detections (PHP / Ruby / C#) ─────────────────────────────────────
+
+@pytest.mark.parametrize("name,code,cwe", [
+    ("a.php", "<?php\n$h = md5($p);\n", "CWE-327"),
+    ("b.php", "<?php\nsystem('ls ' . $dir);\n", "CWE-78"),
+    ("c.php", "<?php\n$db->query(\"SELECT * FROM u WHERE id = $id\");\n", "CWE-89"),
+    ("d.php", "<?php\n$o = unserialize($_GET['x']);\n", "CWE-502"),
+    ("e.php", "<?php\neval($_GET['c']);\n", "CWE-95"),
+    ("a.rb", "d = Digest::MD5.hexdigest(x)\n", "CWE-327"),
+    ("b.rb", "system(\"ls #{dir}\")\n", "CWE-78"),
+    ("c.rb", "User.where(\"name = '#{n}'\")\n", "CWE-89"),
+    ("d.rb", "o = Marshal.load(x)\n", "CWE-502"),
+    ("e.rb", "eval(params[:x])\n", "CWE-95"),
+    ("a.cs", "var h = MD5.Create().ComputeHash(x);\n", "CWE-327"),
+    ("b.cs", "Process.Start(\"ping \" + host);\n", "CWE-78"),
+    ("c.cs", "var cmd = new SqlCommand(\"SELECT x WHERE id=\" + id, conn);\n", "CWE-89"),
+    ("d.cs", "var o = new BinaryFormatter().Deserialize(s);\n", "CWE-502"),
+])
+def test_php_ruby_csharp_positive(tmp_path, name, code, cwe):
+    findings = _scan(tmp_path, name, code)
+    assert cwe in _cwes(findings), f"{name}: expected {cwe}, got {findings}"
+
+
+# ── Cross-function (intra-module) dynamic SQL ─────────────────────────────────
+
+def test_crossfunc_sql_flagged(tmp_path):
+    code = ("def query(cur, sql):\n    cur.execute(sql)\n"
+            "def h(cur, uid):\n    query(cur, f'SELECT {uid}')\n")
+    assert "CWE-89" in _cwes(_scan(tmp_path, "cf.py", code))
+
+
+def test_crossfunc_parameterised_helper_not_flagged(tmp_path):
+    # A helper that parameterises (execute(sql, args)) is not a sink.
+    code = ("def query(cur, sql, args):\n    cur.execute(sql, args)\n"
+            "def h(cur, uid):\n    query(cur, f'SELECT {uid}', (uid,))\n")
+    assert _scan(tmp_path, "cf2.py", code) == []
+
+
 # ── Positive detections (JavaScript) ──────────────────────────────────────────
 
 @pytest.mark.parametrize("name,code,cwe", [
@@ -111,6 +149,9 @@ def test_js_positive(tmp_path, name, code, cwe):
     ("ok.java", "MessageDigest.getInstance(\"SHA-256\");\n"),
     ("ok_rand.java", "String token = String.valueOf(new SecureRandom().nextInt());\n"),
     ("ok_random_nonsec.java", "int dieRoll = new Random().nextInt(6);\n"),
+    ("ok.php", "<?php\n$h = password_hash($p, PASSWORD_DEFAULT);\n$s = $db->prepare(\"SELECT * FROM u WHERE id = ?\");\n"),
+    ("ok.rb", "d = Digest::SHA256.hexdigest(x)\nUser.where(\"name = ?\", n)\n"),
+    ("ok.cs", "var cmd = new SqlCommand(\"SELECT * FROM u WHERE id = @id\", conn);\n"),
 ])
 def test_negative_no_false_positive(tmp_path, name, code):
     assert _scan(tmp_path, name, code) == [], f"false positive in {name}"
@@ -156,7 +197,8 @@ def test_benchmark_scorecard_holds():
     from benchmarks.community_corpus import CASES, COVERAGE_GAPS
     scanner = CodeWeaknessScanner()
 
-    ext_map = {"python": ".py", "javascript": ".js", "go": ".go", "java": ".java"}
+    ext_map = {"python": ".py", "javascript": ".js", "go": ".go", "java": ".java",
+               "php": ".php", "ruby": ".rb", "csharp": ".cs"}
 
     def flags(code, lang):
         import tempfile

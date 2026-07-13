@@ -16,21 +16,58 @@ from typing import Any, List
 from community.gates import UPGRADE_URL
 from community.scanner import ScanResult
 
-_VERSION = "1.3.0"
+_VERSION = "1.4.0"
 
 # ─── SARIF ────────────────────────────────────────────────────────────────────
 
+# GitHub Code Scanning reads `security-severity` (0–10) to rank alerts.
+_SECURITY_SEVERITY = {
+    "CRITICAL": "9.3", "HIGH": "7.5", "MEDIUM": "5.0", "LOW": "3.1", "INFO": "0.0",
+}
+
+
 def to_sarif(result: ScanResult) -> dict:
+    findings = result.all_findings[: 200]        # community cap
+
+    # Build a deduplicated rule catalogue from the findings themselves, so every
+    # ruleId referenced in `results` has a descriptor with its CWE and severity
+    # (GitHub Code Scanning surfaces these as tags + a severity score).
+    rules: list = []
+    rule_index: dict = {}
+    for f in findings:
+        rid = f.get("rule_id", f.get("id", "UNKNOWN"))
+        if rid in rule_index:
+            continue
+        rule_index[rid] = len(rules)
+        severity = f.get("severity", "INFO").upper()
+        tags = ["security"]
+        cwe = f.get("cwe")
+        if cwe:
+            tags.append(f"external/cwe/{str(cwe).lower()}")
+        rules.append({
+            "id": rid,
+            "name": rid,
+            "shortDescription": {"text": f.get("title", f.get("message", rid))},
+            "defaultConfiguration": {"level": _sarif_level(severity)},
+            "properties": {
+                "tags": tags,
+                "security-severity": _SECURITY_SEVERITY.get(severity, "0.0"),
+                "cwe": cwe or "",
+            },
+        })
+
     results = []
-    for f in result.all_findings[: 200]:   # community cap
+    for f in findings:
+        rid = f.get("rule_id", f.get("id", "UNKNOWN"))
         results.append({
-            "ruleId": f.get("rule_id", f.get("id", "UNKNOWN")),
+            "ruleId": rid,
+            "ruleIndex": rule_index.get(rid, 0),
             "level": _sarif_level(f.get("severity", "INFO")),
-            "message": {"text": f.get("title", f.get("message", "Finding"))},
+            "message": {"text": f.get("message", f.get("title", "Finding"))},
             "locations": [{
                 "physicalLocation": {
                     "artifactLocation": {"uri": f.get("file", "unknown")},
-                    "region": {"startLine": max(1, int(f.get("line", 1)))},
+                    "region": {"startLine": max(1, int(f.get("line", 1) or 1))},
                 }
             }],
             "properties": {"severity": f.get("severity", "INFO"), "source": f.get("source", "")},
@@ -45,7 +82,7 @@ def to_sarif(result: ScanResult) -> dict:
                     "name": "TythanAI Community",
                     "version": _VERSION,
                     "informationUri": "https://tythanai.io",
-                    "rules": [],
+                    "rules": rules,
                 }
             },
             "results": results,

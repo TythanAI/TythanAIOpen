@@ -11,7 +11,7 @@ Usage:
     python tythanai_community_cli.py version
 
 Options:
-    --no-sast          Skip SAST (Semgrep + custom rules)
+    --no-sast          Skip SAST (built-in offline engine + Semgrep)
     --no-sca           Skip SCA / dependency CVE scan
     --no-secrets       Skip secrets detection
     --no-iac           Skip IaC scan
@@ -70,7 +70,7 @@ _BANNER = r"""
   / / / / / / __/ __ \/ __ `/ _ \/ /| |  / /
  / / / /_/ / /_/ / / / /_/ /  __/ ___ |_/ /
 /_/  \__, /\__/_/ /_/\__,_/\___/_/  |_/___/
-    /____/   Community Edition  v1.3
+    /____/   Community Edition  v1.4
 """
 
 def _print_banner() -> None:
@@ -224,7 +224,7 @@ def cmd_scan(args) -> int:
 
 
 def cmd_version(args) -> int:
-    print("TythanAI Community Edition v1.3.0")
+    print("TythanAI Community Edition v1.4.0")
     print("Copyright (c) 2026 TythanAI Labs — BSL 1.1")
     print("https://tythanai.io")
     return 0
