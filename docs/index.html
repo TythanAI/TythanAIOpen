@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>TythanAI Community Edition — open, Web3-native security scanner</title>
-<meta name="description" content="Open-source security scanner: SAST, SCA, Secrets, IaC and native Web3 auditing for TON, Solidity, Solana and CosmWasm. One CLI, no account, no telemetry.">
+<meta name="description" content="Open-source security scanner: SAST, SCA, Secrets, IaC and native Web3 auditing for TON, Solidity, Solana and CosmWasm — plus an offline-first AI assistant and an MCP server for Claude Code, Cursor and VS Code. One CLI, no account, no telemetry.">
 <style>
   :root{
     --bg:#f6f5f2; --panel:#ffffff; --ink:#0b0b0c; --muted:#5c5a55; --faint:#8a8880;
@@ -102,6 +102,7 @@
     <a class="brand" href="#top"><span class="bars"><span></span><span></span><span></span><span></span><span></span></span> TythanAI</a>
     <div class="nav-links">
       <a href="#engines">Engines</a>
+      <a href="#ai">AI &amp; IDE</a>
       <a href="#compare">Community vs Pro</a>
       <a href="#benchmark">Benchmarks</a>
       <a href="https://github.com/TythanAI/TythanAIOpen">GitHub</a>
@@ -164,6 +165,28 @@
     <img src="assets/scan-demo.svg" alt="tythanai scan streaming real findings" style="width:100%;border:1px solid var(--line);border-radius:var(--radius)">
   </section>
 
+  <section id="ai">
+    <h2>An AI assistant that works offline — and inside your editor</h2>
+    <p class="sub">Not a rule engine dressed up. TythanAI explains findings, answers questions, and
+      plugs into the agentic tools you already use — with a real safety boundary around anything active.</p>
+    <div class="grid">
+      <div class="card"><div class="k">Assistant</div><h3>💬 explain · ask · chat</h3>
+        <p>Grounded in an offline CWE knowledge base by default — accurate with zero model, zero
+        network. Point it at a local Ollama model or Claude when you want deeper reasoning.</p></div>
+      <div class="card"><div class="k">MCP</div><h3>🔌 Claude Code · Cursor · VS Code</h3>
+        <p>Ships as a local MCP server — <span class="mono">scan_path</span>, <span class="mono">explain_finding</span>,
+        <span class="mono">suggest_fix</span>, <span class="mono">list_rules</span> — so your agent scans real
+        code, not a guess.</p></div>
+      <div class="card"><div class="k">Anti-evasion</div><h3>🕵️ Decodes before it matches</h3>
+        <p>Base64/hex/split-string-obfuscated payloads are decoded before pattern matching, and only
+        flagged when the decoded content is genuinely dangerous. No new false positives.</p></div>
+      <div class="card"><div class="k">Active validation</div><h3>🛡️ Authorized, non-destructive</h3>
+        <p>Turns a finding into a real exploitability assessment — but only for owners with a
+        recorded, unexpired authorization (signed permission or video statement) on file. Destructive
+        or offensive actions are refused unconditionally, and every request is audit-logged.</p></div>
+    </div>
+  </section>
+
   <section id="compare">
     <h2>Community vs Pro</h2>
     <p class="sub">The Community Edition is genuinely useful on its own. Teams and audit firms
@@ -173,7 +196,9 @@
       <tbody>
         <tr><td>Local CLI — SAST · SCA · Secrets · IaC · Web3</td><td class="c yes">✓</td><td class="c yes">✓</td></tr>
         <tr><td>Web3 rule packs (TON · Solidity · Solana · CosmWasm)</td><td class="c">Core checks</td><td class="c">Full set + deep analysis</td></tr>
-        <tr><td>AI triage &amp; fix suggestions</td><td class="c no">—</td><td class="c yes">✓</td></tr>
+        <tr><td>AI assistant — explain · ask · chat</td><td class="c yes">✓ offline KB</td><td class="c yes">✓ + whole-repo triage</td></tr>
+        <tr><td>MCP server (Claude Code · Cursor · VS Code)</td><td class="c yes">✓</td><td class="c yes">✓ + org-wide policy</td></tr>
+        <tr><td>Anti-evasion &amp; authorized active validation</td><td class="c yes">✓ assessment only</td><td class="c yes">✓ + sandboxed DAST PoC</td></tr>
         <tr><td>Auto-fix pull requests · CI/CD gates</td><td class="c no">—</td><td class="c yes">✓</td></tr>
         <tr><td>Dependency reachability analysis</td><td class="c no">—</td><td class="c yes">✓</td></tr>
         <tr><td>Inter-procedural CPG taint (Go · Java · Rust)</td><td class="c no">—</td><td class="c yes">✓</td></tr>
