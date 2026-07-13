@@ -70,7 +70,7 @@ _BANNER = r"""
   / / / / / / __/ __ \/ __ `/ _ \/ /| |  / /
  / / / /_/ / /_/ / / / /_/ /  __/ ___ |_/ /
 /_/  \__, /\__/_/ /_/\__,_/\___/_/  |_/___/
-    /____/   Community Edition  v1.2
+    /____/   Community Edition  v1.3
 """
 
 def _print_banner() -> None:
@@ -224,7 +224,7 @@ def cmd_scan(args) -> int:
 
 
 def cmd_version(args) -> int:
-    print("TythanAI Community Edition v1.2.0")
+    print("TythanAI Community Edition v1.3.0")
     print("Copyright (c) 2026 TythanAI Labs — BSL 1.1")
     print("https://tythanai.io")
     return 0

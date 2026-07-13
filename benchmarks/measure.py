@@ -26,7 +26,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from benchmarks.community_corpus import CASES, COVERAGE_GAPS   # noqa: E402
 from scanners.code_weakness_scanner import CodeWeaknessScanner  # noqa: E402
 
-_EXT = {"python": ".py", "javascript": ".js"}
+_EXT = {"python": ".py", "javascript": ".js", "go": ".go", "java": ".java"}
 
 
 def _flags(scanner: CodeWeaknessScanner, code: str, lang: str) -> list:

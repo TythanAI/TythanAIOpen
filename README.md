@@ -97,7 +97,7 @@ Everything below runs **locally, free, with no account**:
 | Engine | What it does |
 |--------|--------------|
 | 🪙 **Web3 audit** | Native static checks for **TON (FunC/Tolk)**, **Solidity/EVM**, **Solana/Anchor** and **CosmWasm** — reentrancy, unchecked low-level calls, missing sender validation, gas-drain, weak randomness, `tx.origin` auth, unprotected `selfdestruct`, hardcoded keys, and more. |
-| 🔍 **SAST** | A **built-in, offline rule engine** flags weak crypto, unsafe deserialization, disabled TLS verification, `eval`/`exec`, command injection and dynamic SQL in Python and JS/TS — no external tools, no network. Add [Semgrep](https://semgrep.dev) for extra breadth across Java, Go, Rust, PHP, Ruby and C/C++, normalised into the same finding format. |
+| 🔍 **SAST** | A **built-in, offline rule engine** for **Python, JS/TS, Go and Java** flags weak crypto, unsafe deserialization, disabled TLS, `eval`/`exec`, command injection, dynamic SQL, insecure randomness, XXE and user-controlled file paths — no external tools, no network. Add [Semgrep](https://semgrep.dev) for extra breadth (Rust, PHP, Ruby, C/C++…), normalised into the same finding format. |
 | 📦 **SCA** | Dependency CVEs from **[OSV.dev](https://osv.dev)** with EPSS exploit-probability ranking, and an offline known-CVE fallback so you still get results with no network. |
 | 🔑 **Secrets** | **40+ secret patterns across 27 providers** (AWS, GCP, GitHub, Stripe, Slack, database URIs, private keys, crypto wallets…) plus entropy analysis. |
 | ☁️ **IaC** | Terraform, Kubernetes and CloudFormation misconfiguration checks (public buckets, open security groups, missing encryption…). |
@@ -243,21 +243,21 @@ python -m benchmarks.measure
 
 | Scope | Recall (TPR) | False positives |
 |-------|:---:|:---:|
-| **Modelled weakness classes** — weak crypto, unsafe deserialization, TLS-off, `eval`/`exec`, command injection, dynamic SQL, XSS/SSTI (7 CWE classes) | **100%** (25/25) | **0%** |
-| **Overall, incl. out-of-model taint classes** | **83.3%** (25/30) | **0%** |
+| **Modelled weakness classes** — weak crypto, insecure deserialization, TLS-off, `eval`/`exec`, command injection, dynamic SQL, XSS/SSTI, insecure randomness, XXE, path traversal (**10 CWE classes** across Python · JS/TS · Go · Java) | **100%** (38/38) | **0%** |
+| **Overall, incl. out-of-model taint classes** | **92.7%** (38/41) | **0%** |
 
 Two things we do on purpose:
 
 - **Zero false positives across the whole corpus** — a finding you act on, not
   noise you triage.
-- **We name our blind spots.** Path traversal, SSRF, SQL assembled across
-  statements, insecure randomness and XXE need inter-procedural data-flow
-  (taint) tracking — that's the **Pro** CPG engine. The rule engine honestly
-  scores 0% on those rather than guessing.
+- **We name our blind spots.** SSRF, SQL tainted across a function boundary and
+  open redirect need inter-procedural data-flow (taint) tracking — that's the
+  **Pro** CPG engine. The rule engine honestly scores 0% on those rather than
+  guessing.
 
 > The corpus is maintained in-repo alongside the rules — authoring is disclosed,
 > not hidden. The Community Edition also carries a full unit-test suite:
-> `pytest tests/ -v` (**83 tests**).
+> `pytest tests/ -v` (**105 tests**).
 
 ---
 

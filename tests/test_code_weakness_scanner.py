@@ -39,8 +39,39 @@ def _cwes(findings):
     ("s.py", "import subprocess\nsubprocess.run(c, shell=True)\n", "CWE-78"),
     ("q.py", "def f(cur, i):\n    cur.execute(f'SELECT {i}')\n", "CWE-89"),
     ("q2.py", "def f(cur, n):\n    cur.execute('SELECT ' + n)\n", "CWE-89"),
+    ("q3.py", "def f(cur, i):\n    q = f'SELECT {i}'\n    cur.execute(q)\n", "CWE-89"),
+    ("r.py", "import random\ntoken = str(random.randint(0, 9))\n", "CWE-330"),
+    ("x.py", "from lxml import etree\netree.fromstring(data)\n", "CWE-611"),
+    ("pt.py", "def r(req):\n    return open(req.args.get('f')).read()\n", "CWE-22"),
 ])
 def test_python_positive(tmp_path, name, code, cwe):
+    findings = _scan(tmp_path, name, code)
+    assert cwe in _cwes(findings), f"{name}: expected {cwe}, got {findings}"
+
+
+# ── Positive detections (Go) ──────────────────────────────────────────────────
+
+@pytest.mark.parametrize("name,code,cwe", [
+    ("h.go", "func f() { h := md5.New() }\n", "CWE-327"),
+    ("t.go", "cfg := &tls.Config{InsecureSkipVerify: true}\n", "CWE-295"),
+    ("c.go", "exec.Command(\"sh\", \"-c\", \"ls \"+dir)\n", "CWE-78"),
+    ("q.go", "db.Query(\"SELECT * FROM u WHERE id = \" + id)\n", "CWE-89"),
+])
+def test_go_positive(tmp_path, name, code, cwe):
+    findings = _scan(tmp_path, name, code)
+    assert cwe in _cwes(findings), f"{name}: expected {cwe}, got {findings}"
+
+
+# ── Positive detections (Java) ────────────────────────────────────────────────
+
+@pytest.mark.parametrize("name,code,cwe", [
+    ("h.java", "MessageDigest.getInstance(\"MD5\");\n", "CWE-327"),
+    ("c.java", "Runtime.getRuntime().exec(\"ping \" + host);\n", "CWE-78"),
+    ("q.java", "stmt.executeQuery(\"SELECT x FROM t WHERE id=\" + id);\n", "CWE-89"),
+    ("d.java", "new ObjectInputStream(in).readObject();\n", "CWE-502"),
+    ("r.java", "String token = String.valueOf(new Random().nextInt());\n", "CWE-330"),
+])
+def test_java_positive(tmp_path, name, code, cwe):
     findings = _scan(tmp_path, name, code)
     assert cwe in _cwes(findings), f"{name}: expected {cwe}, got {findings}"
 
@@ -71,6 +102,15 @@ def test_js_positive(tmp_path, name, code, cwe):
     ("ok_eval.py", "import ast\nast.literal_eval(x)\n"),
     ("ok.js", "const r = JSON.parse(req.query.x);\nel.textContent = n;\n"),
     ("ok_tls.js", "new https.Agent({ rejectUnauthorized: true });\n"),
+    ("ok_indirect.py", "def f(cur, i):\n    q = 'SELECT * FROM t WHERE id=?'\n    cur.execute(q, (i,))\n"),
+    ("ok_random.py", "import secrets\ntoken = secrets.token_hex(16)\n"),
+    ("ok_xxe.py", "from lxml import etree\netree.fromstring(data, safe_parser)\n"),
+    ("ok_path.py", "import os\ndef r(req):\n    n = os.path.basename(req.args.get('f'))\n    return open(os.path.join(D, n)).read()\n"),
+    ("ok.go", "func f() { h := sha256.New() }\ncfg := &tls.Config{InsecureSkipVerify: false}\n"),
+    ("ok_sql.go", "db.Query(\"SELECT * FROM u WHERE id = $1\", id)\n"),
+    ("ok.java", "MessageDigest.getInstance(\"SHA-256\");\n"),
+    ("ok_rand.java", "String token = String.valueOf(new SecureRandom().nextInt());\n"),
+    ("ok_random_nonsec.java", "int dieRoll = new Random().nextInt(6);\n"),
 ])
 def test_negative_no_false_positive(tmp_path, name, code):
     assert _scan(tmp_path, name, code) == [], f"false positive in {name}"
@@ -116,10 +156,11 @@ def test_benchmark_scorecard_holds():
     from benchmarks.community_corpus import CASES, COVERAGE_GAPS
     scanner = CodeWeaknessScanner()
 
+    ext_map = {"python": ".py", "javascript": ".js", "go": ".go", "java": ".java"}
+
     def flags(code, lang):
         import tempfile
-        ext = ".py" if lang == "python" else ".js"
-        fd, path = tempfile.mkstemp(suffix=ext)
+        fd, path = tempfile.mkstemp(suffix=ext_map[lang])
         try:
             with os.fdopen(fd, "w") as fh:
                 fh.write(code)

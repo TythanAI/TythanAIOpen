@@ -7,9 +7,11 @@ scanners/code_weakness_scanner.py — built-in, offline SAST rule engine.
 
 Dependency-free static checks for the weakness classes that a taint engine
 *doesn't* model (weak crypto, insecure deserialization, disabled TLS
-verification, code/command injection, dynamic SQL). Python is analysed with
-the `ast` module (structural, low false-positive); JavaScript/TypeScript with
-a small set of conservative line patterns.
+verification, code/command injection, dynamic SQL, weak randomness, XXE,
+direct-user-input file access). Python is analysed with the `ast` module
+(structural, low false-positive) including a light *local* def-use pass so SQL
+built into a variable and then executed is still caught. JavaScript/TypeScript,
+Go and Java are analysed with a small set of conservative line patterns.
 
 This runs with **no network and no external tools**, so `tythanai scan`
 always produces SAST results even when Semgrep is not installed. When Semgrep
@@ -23,15 +25,19 @@ from __future__ import annotations
 import ast
 import re
 from pathlib import Path
-from typing import Callable, Dict, List, Optional
+from typing import Callable, Dict, List, Optional, Set
 
 # ── File selection ────────────────────────────────────────────────────────────
 
 _PY_EXTS = {".py", ".pyi"}
 _JS_EXTS = {".js", ".jsx", ".mjs", ".cjs", ".ts", ".tsx"}
+_GO_EXTS = {".go"}
+_JAVA_EXTS = {".java"}
+_ALL_EXTS = _PY_EXTS | _JS_EXTS | _GO_EXTS | _JAVA_EXTS
 _SKIP_DIRS = {
     ".git", "__pycache__", "node_modules", ".venv", "venv", "env",
     "dist", "build", ".tox", ".mypy_cache", ".pytest_cache", "site-packages",
+    "vendor", "target", "third_party",
 }
 _MAX_FILE_BYTES = 1_500_000
 
@@ -51,12 +57,26 @@ RULES: Dict[str, Dict[str, str]] = {
     "TYT-P009": {"cwe": "CWE-78",  "severity": "HIGH",   "title": "subprocess with shell=True"},
     "TYT-P010": {"cwe": "CWE-89",  "severity": "HIGH",   "title": "SQL built from dynamic string (injection)"},
     "TYT-P011": {"cwe": "CWE-79",  "severity": "MEDIUM", "title": "Template/markup rendered from dynamic input (XSS/SSTI)"},
+    "TYT-P012": {"cwe": "CWE-330", "severity": "MEDIUM", "title": "Insecure randomness for a security value"},
+    "TYT-P013": {"cwe": "CWE-611", "severity": "MEDIUM", "title": "XML parsed without external-entity protection (XXE)"},
+    "TYT-P014": {"cwe": "CWE-22",  "severity": "HIGH",   "title": "User-controlled path passed to open() (traversal)"},
     # JavaScript / TypeScript
     "TYT-J001": {"cwe": "CWE-95",  "severity": "HIGH",   "title": "Code injection via eval()"},
     "TYT-J002": {"cwe": "CWE-78",  "severity": "HIGH",   "title": "Command execution with interpolated input"},
     "TYT-J003": {"cwe": "CWE-79",  "severity": "MEDIUM", "title": "innerHTML assigned dynamic content (DOM XSS)"},
     "TYT-J004": {"cwe": "CWE-327", "severity": "MEDIUM", "title": "Weak hash algorithm (MD5/SHA-1)"},
     "TYT-J005": {"cwe": "CWE-295", "severity": "HIGH",   "title": "TLS certificate validation disabled"},
+    # Go
+    "TYT-G001": {"cwe": "CWE-327", "severity": "MEDIUM", "title": "Weak hash/cipher (MD5/SHA-1/DES/RC4)"},
+    "TYT-G002": {"cwe": "CWE-295", "severity": "HIGH",   "title": "TLS verification disabled (InsecureSkipVerify)"},
+    "TYT-G003": {"cwe": "CWE-78",  "severity": "HIGH",   "title": "Command execution with concatenated input"},
+    "TYT-G004": {"cwe": "CWE-89",  "severity": "HIGH",   "title": "SQL built from dynamic string (injection)"},
+    # Java
+    "TYT-A001": {"cwe": "CWE-327", "severity": "MEDIUM", "title": "Weak hash/cipher (MD5/SHA-1/DES/ECB)"},
+    "TYT-A002": {"cwe": "CWE-78",  "severity": "HIGH",   "title": "Command execution with concatenated input"},
+    "TYT-A003": {"cwe": "CWE-89",  "severity": "HIGH",   "title": "SQL built from string concatenation (injection)"},
+    "TYT-A004": {"cwe": "CWE-502", "severity": "HIGH",   "title": "Unsafe Java deserialization (ObjectInputStream)"},
+    "TYT-A005": {"cwe": "CWE-330", "severity": "MEDIUM", "title": "Insecure randomness for a security value (use SecureRandom)"},
 }
 
 
@@ -85,6 +105,13 @@ _PICKLE_LOADS = {
     "dill.loads", "dill.load", "shelve.open",
 }
 _OS_EXEC = {"os.system", "os.popen"}
+_RANDOM_FUNCS = {"random", "randint", "randrange", "choice", "getrandbits",
+                 "uniform", "sample", "shuffle", "choices"}
+_SECURITY_NAME = re.compile(
+    r"(token|secret|api[_-]?key|passwd|password|pwd|nonce|salt|otp|seed|"
+    r"session|csrf|cookie|private|credential)", re.I)
+_REQUEST_ACCESS = re.compile(r"(args\.get|form\.get|values\.get|\.GET|\.POST|request)", re.I)
+_XML_PARSE = ("etree.fromstring", "etree.parse", "etree.XML")
 
 
 def _dotted(node: ast.AST) -> str:
@@ -116,11 +143,37 @@ def _is_dynamic_str(node: Optional[ast.AST]) -> bool:
     return False
 
 
+def _collect_dynamic_vars(body: List[ast.stmt]) -> Set[str]:
+    """Names assigned a runtime-built string within one scope (no nested defs)."""
+    names: Set[str] = set()
+
+    def walk(stmts: List[ast.stmt]) -> None:
+        for s in stmts:
+            if isinstance(s, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                continue                                     # separate scope
+            if isinstance(s, ast.Assign) and _is_dynamic_str(s.value):
+                for t in s.targets:
+                    if isinstance(t, ast.Name):
+                        names.add(t.id)
+            if isinstance(s, ast.AnnAssign) and _is_dynamic_str(s.value) \
+                    and isinstance(s.target, ast.Name):
+                names.add(s.target.id)
+            for field in ("body", "orelse", "finalbody"):
+                sub = getattr(s, field, None)
+                if isinstance(sub, list):
+                    walk(sub)
+            for handler in getattr(s, "handlers", []) or []:
+                walk(handler.body)
+    walk(body)
+    return names
+
+
 class _PyVisitor(ast.NodeVisitor):
     def __init__(self, file: str, add: Callable[[dict], None], src_lines: List[str]):
         self.file = file
         self.add = add
         self.lines = src_lines
+        self.scopes: List[Set[str]] = []          # stack of dynamic-var sets
 
     def _ev(self, node: ast.AST) -> str:
         ln = getattr(node, "lineno", 0)
@@ -130,10 +183,40 @@ class _PyVisitor(ast.NodeVisitor):
         ln = getattr(node, "lineno", 0)
         self.add(_finding(rule_id, self.file, ln, self._ev(node), detail))
 
-    # -- attribute access: ECB mode, weak-cipher module refs -------------------
+    def _is_dynamic_var(self, node: ast.AST) -> bool:
+        return isinstance(node, ast.Name) and any(node.id in s for s in self.scopes)
+
+    # -- scope tracking for local def-use (dynamic SQL through a variable) ------
+    def visit_Module(self, node: ast.Module) -> None:
+        self.scopes.append(_collect_dynamic_vars(node.body))
+        self.generic_visit(node)
+        self.scopes.pop()
+
+    def _visit_func(self, node) -> None:
+        self.scopes.append(_collect_dynamic_vars(node.body))
+        self.generic_visit(node)
+        self.scopes.pop()
+
+    visit_FunctionDef = _visit_func
+    visit_AsyncFunctionDef = _visit_func
+
+    # -- attribute access: ECB mode --------------------------------------------
     def visit_Attribute(self, node: ast.Attribute) -> None:
-        if node.attr in ("MODE_ECB",) or node.attr == "ECB":
+        if node.attr == "MODE_ECB" or node.attr == "ECB":
             self._emit("TYT-P003", node, "ECB reveals plaintext structure; use GCM/CBC with a random IV")
+        self.generic_visit(node)
+
+    # -- assignments: weak randomness for a security value ---------------------
+    def visit_Assign(self, node: ast.Assign) -> None:
+        target_names = [t.id for t in node.targets if isinstance(t, ast.Name)]
+        if any(_SECURITY_NAME.search(n) for n in target_names):
+            for sub in ast.walk(node.value):
+                if isinstance(sub, ast.Call):
+                    d = _dotted(sub.func)
+                    if d.split(".")[0] == "random" and d.split(".")[-1] in _RANDOM_FUNCS:
+                        self._emit("TYT-P012", node,
+                                   "use the `secrets` module for tokens/keys, not `random`")
+                        break
         self.generic_visit(node)
 
     # -- calls: the bulk of the rules ------------------------------------------
@@ -162,7 +245,7 @@ class _PyVisitor(ast.NodeVisitor):
                 self._emit("TYT-P004", node, "verify=False disables certificate checking (MITM)")
             if kw.arg == "check_hostname" and _is_false(kw.value):
                 self._emit("TYT-P004", node, "check_hostname=False disables hostname verification")
-        if low in ("ssl._create_unverified_context",):
+        if low == "ssl._create_unverified_context":
             self._emit("TYT-P004", node, "unverified SSL context accepts any certificate")
 
         # TYT-P005 unsafe deserialization
@@ -173,9 +256,9 @@ class _PyVisitor(ast.NodeVisitor):
         if low in ("yaml.load", "yaml.load_all"):
             loader = next((kw.value for kw in node.keywords if kw.arg == "Loader"), None)
             loader_name = _dotted(loader).split(".")[-1] if loader is not None else ""
-            if loader_name in ("", "Loader", "UnsafeLoader") and not (
-                    len(node.args) >= 2 and _dotted(node.args[1]).split(".")[-1]
-                    in ("SafeLoader", "FullLoader", "CSafeLoader")):
+            second = _dotted(node.args[1]).split(".")[-1] if len(node.args) >= 2 else ""
+            if loader_name in ("", "Loader", "UnsafeLoader") and \
+                    second not in ("SafeLoader", "FullLoader", "CSafeLoader"):
                 self._emit("TYT-P006", node, "use yaml.safe_load / Loader=SafeLoader")
 
         # TYT-P007 eval / exec
@@ -191,18 +274,30 @@ class _PyVisitor(ast.NodeVisitor):
             if any(kw.arg == "shell" and _is_true(kw.value) for kw in node.keywords):
                 self._emit("TYT-P009", node, "shell=True with dynamic input enables command injection")
 
-        # TYT-P010 dynamic SQL
+        # TYT-P010 dynamic SQL (direct or via a locally-built string)
         if attr in ("execute", "executemany", "executescript", "raw", "extra"):
-            if node.args and _is_dynamic_str(node.args[0]):
+            if node.args and (_is_dynamic_str(node.args[0]) or self._is_dynamic_var(node.args[0])):
                 self._emit("TYT-P010", node, "pass parameters as bind values, not string-formatted SQL")
 
         # TYT-P011 SSTI / XSS sinks
         if attr == "render_template_string" or low.endswith("render_template_string"):
             if node.args and not _is_const_str(node.args[0]):
                 self._emit("TYT-P011", node, "rendering a dynamic template enables SSTI")
-        if name == "mark_safe" or attr == "mark_safe":
-            if node.args and not _is_const_str(node.args[0]):
-                self._emit("TYT-P011", node, "mark_safe on dynamic input bypasses auto-escaping")
+        if (name == "mark_safe" or attr == "mark_safe") and node.args and not _is_const_str(node.args[0]):
+            self._emit("TYT-P011", node, "mark_safe on dynamic input bypasses auto-escaping")
+
+        # TYT-P013 XXE — lxml parse without an explicit hardened parser
+        if any(low.endswith(x.lower()) for x in _XML_PARSE):
+            has_parser = any(kw.arg == "parser" for kw in node.keywords) or len(node.args) >= 2
+            if not has_parser:
+                self._emit("TYT-P013", node,
+                           "configure an XMLParser(resolve_entities=False, no_network=True)")
+
+        # TYT-P014 user-controlled path into open()
+        if (name == "open" or low in ("os.open", "io.open", "codecs.open")) and node.args:
+            first = node.args[0]
+            if isinstance(first, ast.Call) and _REQUEST_ACCESS.search(_dotted(first.func)):
+                self._emit("TYT-P014", node, "validate and confine the path (basename + safe root)")
 
         self.generic_visit(node)
 
@@ -229,7 +324,7 @@ def _scan_python(text: str, file: str) -> List[dict]:
     return out
 
 
-# ── JavaScript / TypeScript analysis (conservative line patterns) ─────────────
+# ── Line-pattern analysis for JS / Go / Java ──────────────────────────────────
 
 _JS_RULES: List[tuple] = [
     ("TYT-J001", re.compile(r"(^|[^.\w])eval\s*\(")),
@@ -238,18 +333,54 @@ _JS_RULES: List[tuple] = [
     ("TYT-J004", re.compile(r"createHash\s*\(\s*['\"](md5|sha1)['\"]")),
     ("TYT-J005", re.compile(r"(rejectUnauthorized\s*:\s*false|NODE_TLS_REJECT_UNAUTHORIZED\s*=\s*['\"]?0)")),
 ]
-_JS_COMMENT = re.compile(r"^\s*(//|\*|/\*)")
+
+_GO_RULES: List[tuple] = [
+    ("TYT-G001", re.compile(r"\b(md5|sha1|des|rc4)\.New(Cipher)?\s*\(")),
+    ("TYT-G002", re.compile(r"InsecureSkipVerify\s*:\s*true")),
+    ("TYT-G003", re.compile(r"exec\.Command(Context)?\s*\([^)]*(\+|fmt\.Sprintf|\"-c\")")),
+    ("TYT-G004", re.compile(r"\.(Query|QueryRow|Exec|QueryContext|ExecContext)\s*\([^)]*(fmt\.Sprintf|\"\s*\+|\+\s*\w)")),
+]
+
+_JAVA_RULES: List[tuple] = [
+    ("TYT-A001", re.compile(r"getInstance\s*\(\s*\"(MD5|SHA-?1|DES|DES/|RC4|AES/ECB)", re.I)),
+    ("TYT-A002", re.compile(r"(Runtime\.getRuntime\(\)\.exec|new\s+ProcessBuilder)\s*\([^)]*\+")),
+    ("TYT-A003", re.compile(r"\.(executeQuery|executeUpdate|execute)\s*\(\s*\"[^\"]*\"\s*\+")),
+    ("TYT-A004", re.compile(r"new\s+ObjectInputStream\s*\(")),
+    ("TYT-A005", re.compile(r"new\s+Random\s*\(")),
+]
+
+_COMMENT = re.compile(r"^\s*(//|\*|/\*|#)")
+_JAVA_A005_CONTEXT = re.compile(
+    r"(token|secret|key|passwd|password|pwd|nonce|salt|otp|session|csrf)", re.I)
+
+
+def _scan_lines(text: str, file: str, rules: List[tuple],
+                gated: Optional[Dict[str, re.Pattern]] = None) -> List[dict]:
+    out: List[dict] = []
+    for i, line in enumerate(text.splitlines(), 1):
+        if _COMMENT.match(line):
+            continue
+        for rule_id, rx in rules:
+            if not rx.search(line):
+                continue
+            if gated and rule_id in gated and not gated[rule_id].search(line):
+                continue           # require an extra context signal to fire
+            out.append(_finding(rule_id, file, i, line))
+    return out
 
 
 def _scan_js(text: str, file: str) -> List[dict]:
-    out: List[dict] = []
-    for i, line in enumerate(text.splitlines(), 1):
-        if _JS_COMMENT.match(line):
-            continue
-        for rule_id, rx in _JS_RULES:
-            if rx.search(line):
-                out.append(_finding(rule_id, file, i, line))
-    return out
+    return _scan_lines(text, file, _JS_RULES)
+
+
+def _scan_go(text: str, file: str) -> List[dict]:
+    return _scan_lines(text, file, _GO_RULES)
+
+
+def _scan_java(text: str, file: str) -> List[dict]:
+    # new Random() only fires when the line clearly concerns a security value,
+    # so ordinary java.util.Random for non-security use is not flagged.
+    return _scan_lines(text, file, _JAVA_RULES, gated={"TYT-A005": _JAVA_A005_CONTEXT})
 
 
 # ── Public scanner ────────────────────────────────────────────────────────────
@@ -273,6 +404,10 @@ class CodeWeaknessScanner:
             return _scan_python(text, str(p))
         if ext in _JS_EXTS:
             return _scan_js(text, str(p))
+        if ext in _GO_EXTS:
+            return _scan_go(text, str(p))
+        if ext in _JAVA_EXTS:
+            return _scan_java(text, str(p))
         return []
 
     def scan_directory(self, directory: str) -> List[dict]:
@@ -288,7 +423,7 @@ class CodeWeaknessScanner:
                 continue
             if any(part in _SKIP_DIRS for part in path.parts):
                 continue
-            if path.suffix.lower() not in (_PY_EXTS | _JS_EXTS):
+            if path.suffix.lower() not in _ALL_EXTS:
                 continue
             seen += 1
             out.extend(self.scan_file(str(path)))

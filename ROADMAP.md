@@ -5,7 +5,7 @@ Priorities may shift based on user feedback.
 
 ## Now (Community Edition)
 
-- Built-in **offline SAST engine** (weak crypto, unsafe deserialization, TLS-off, eval/exec, command injection, dynamic SQL) — no external tools or network
+- Built-in **offline SAST engine** for **Python, JS/TS, Go and Java** (weak crypto, insecure deserialization, TLS-off, eval/exec, command injection, dynamic SQL, insecure randomness, XXE, path traversal) — no external tools or network
 - Optional Semgrep integration for extra language/rule breadth
 - SCA via OSV.dev + EPSS enrichment, with an offline fallback
 - Secrets detection in source
