@@ -4,6 +4,25 @@ All notable changes to **TythanAI Community Edition** are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/); versions
 follow [Semantic Versioning](https://semver.org/).
 
+## [1.5.0]
+
+### Added
+- Built-in SAST engine extended to **Kotlin, Rust and C/C++** (now 10 languages).
+  New class: dangerous C functions — `strcpy`/`strcat`/`sprintf`/`gets` (CWE-676).
+- **`--baseline` / `--update-baseline`** CLI flags: record accepted findings once,
+  then fail CI only on genuinely *new* ones. Fingerprints are line-independent.
+- **Docker image** (`Dockerfile`) — `docker run --rm -v "$PWD:/src" tythanai/community scan /src`.
+- **CI workflow** (`.github/workflows/ci.yml`): ruff + tests + benchmark +
+  rules-doc sync check on 3.10 and 3.12.
+- Auto-generated rule reference **`docs/RULES.md`** (`python -m benchmarks.gen_rules_doc`),
+  kept in sync by a test.
+
+### Changed
+- Benchmark corpus grown to 66 pairs across 10 languages and 11 CWE classes.
+  Modelled recall 100% (63/63); overall **95.5%** (63/66); zero false positives.
+- ruff config: keep correctness checks, silence stylistic rules that clash with
+  the codebase's house style.
+
 ## [1.4.0]
 
 ### Added

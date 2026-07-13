@@ -27,7 +27,8 @@ from benchmarks.community_corpus import CASES, COVERAGE_GAPS   # noqa: E402
 from scanners.code_weakness_scanner import CodeWeaknessScanner  # noqa: E402
 
 _EXT = {"python": ".py", "javascript": ".js", "go": ".go", "java": ".java",
-        "php": ".php", "ruby": ".rb", "csharp": ".cs"}
+        "php": ".php", "ruby": ".rb", "csharp": ".cs",
+        "kotlin": ".kt", "rust": ".rs", "cpp": ".cpp"}
 
 
 def _flags(scanner: CodeWeaknessScanner, code: str, lang: str) -> list:

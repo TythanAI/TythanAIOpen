@@ -10,7 +10,7 @@ and a secure snippet (must NOT be flagged — a finding there is a false
 positive on real, correct code). This is what `benchmarks/measure.py` scores,
 so the recall/precision numbers in the README are reproducible from source.
 
-Languages: python, javascript, go, java.
+Languages: python, javascript, go, java, php, ruby, csharp, kotlin, rust, cpp.
 """
 from __future__ import annotations
 
@@ -208,6 +208,42 @@ CASES = [
     ("cs-binaryformatter", "csharp", "CWE-502",
      "var obj = new BinaryFormatter().Deserialize(stream);\n",
      "var obj = JsonSerializer.Deserialize<Foo>(stream);\n"),
+
+    # ── Kotlin ────────────────────────────────────────────────────────────────
+    ("kt-weak-hash", "kotlin", "CWE-327",
+     "val md = MessageDigest.getInstance(\"MD5\")\n",
+     "val md = MessageDigest.getInstance(\"SHA-256\")\n"),
+    ("kt-command", "kotlin", "CWE-78",
+     "Runtime.getRuntime().exec(\"ping \" + host)\n",
+     "ProcessBuilder(\"ping\", host).start()\n"),
+    ("kt-sql", "kotlin", "CWE-89",
+     "stmt.executeQuery(\"SELECT * FROM u WHERE id = $id\")\n",
+     "conn.prepareStatement(\"SELECT * FROM u WHERE id = ?\")\n"),
+    ("kt-deser", "kotlin", "CWE-502",
+     "val ois = ObjectInputStream(input)\n",
+     "val o = mapper.readValue(input, Foo::class.java)\n"),
+
+    # ── Rust ──────────────────────────────────────────────────────────────────
+    ("rs-weak-hash", "rust", "CWE-327",
+     "let mut hasher = Md5::new();\n",
+     "let mut hasher = Sha256::new();\n"),
+    ("rs-command", "rust", "CWE-78",
+     "Command::new(\"sh\").arg(\"-c\").arg(format!(\"ls {}\", dir)).output();\n",
+     "Command::new(\"ls\").arg(dir).output();\n"),
+    ("rs-sql", "rust", "CWE-89",
+     "sqlx::query(&format!(\"SELECT * FROM u WHERE id = {}\", id)).fetch_one(&pool);\n",
+     "sqlx::query(\"SELECT * FROM u WHERE id = $1\").bind(id).fetch_one(&pool);\n"),
+
+    # ── C / C++ ───────────────────────────────────────────────────────────────
+    ("cpp-dangerous", "cpp", "CWE-676",
+     "strcpy(dst, src);\n",
+     "strncpy(dst, src, sizeof(dst) - 1);\n"),
+    ("cpp-command", "cpp", "CWE-78",
+     "system((\"rm \" + path).c_str());\n",
+     "execvp(\"rm\", args);\n"),
+    ("cpp-crypto", "cpp", "CWE-327",
+     "MD5_Init(&ctx);\n",
+     "SHA256_Init(&ctx);\n"),
 
     # ── SQL tainted across a function boundary within one module ──────────────
     ("py-crossfunc-sql", "python", "CWE-89",

@@ -99,6 +99,25 @@ def test_php_ruby_csharp_positive(tmp_path, name, code, cwe):
     assert cwe in _cwes(findings), f"{name}: expected {cwe}, got {findings}"
 
 
+# ── Positive detections (Kotlin / Rust / C++) ─────────────────────────────────
+
+@pytest.mark.parametrize("name,code,cwe", [
+    ("a.kt", "val md = MessageDigest.getInstance(\"MD5\")\n", "CWE-327"),
+    ("b.kt", "Runtime.getRuntime().exec(\"ping \" + host)\n", "CWE-78"),
+    ("c.kt", "stmt.executeQuery(\"SELECT x WHERE id = $id\")\n", "CWE-89"),
+    ("d.kt", "val ois = ObjectInputStream(input)\n", "CWE-502"),
+    ("a.rs", "let h = Md5::new();\n", "CWE-327"),
+    ("b.rs", "Command::new(\"sh\").arg(format!(\"ls {}\", d));\n", "CWE-78"),
+    ("c.rs", "sqlx::query(&format!(\"SELECT {}\", id));\n", "CWE-89"),
+    ("a.cpp", "strcpy(dst, src);\n", "CWE-676"),
+    ("b.cpp", "system((\"rm \" + p).c_str());\n", "CWE-78"),
+    ("c.cpp", "MD5_Init(&ctx);\n", "CWE-327"),
+])
+def test_kotlin_rust_cpp_positive(tmp_path, name, code, cwe):
+    findings = _scan(tmp_path, name, code)
+    assert cwe in _cwes(findings), f"{name}: expected {cwe}, got {findings}"
+
+
 # ── Cross-function (intra-module) dynamic SQL ─────────────────────────────────
 
 def test_crossfunc_sql_flagged(tmp_path):
@@ -152,6 +171,9 @@ def test_js_positive(tmp_path, name, code, cwe):
     ("ok.php", "<?php\n$h = password_hash($p, PASSWORD_DEFAULT);\n$s = $db->prepare(\"SELECT * FROM u WHERE id = ?\");\n"),
     ("ok.rb", "d = Digest::SHA256.hexdigest(x)\nUser.where(\"name = ?\", n)\n"),
     ("ok.cs", "var cmd = new SqlCommand(\"SELECT * FROM u WHERE id = @id\", conn);\n"),
+    ("ok.kt", "val md = MessageDigest.getInstance(\"SHA-256\")\nconn.prepareStatement(\"SELECT * FROM u WHERE id = ?\")\n"),
+    ("ok.rs", "let h = Sha256::new();\nCommand::new(\"ls\").arg(dir);\n"),
+    ("ok.cpp", "strncpy(dst, src, n);\nexecvp(\"rm\", args);\nSHA256_Init(&ctx);\n"),
 ])
 def test_negative_no_false_positive(tmp_path, name, code):
     assert _scan(tmp_path, name, code) == [], f"false positive in {name}"
@@ -198,7 +220,8 @@ def test_benchmark_scorecard_holds():
     scanner = CodeWeaknessScanner()
 
     ext_map = {"python": ".py", "javascript": ".js", "go": ".go", "java": ".java",
-               "php": ".php", "ruby": ".rb", "csharp": ".cs"}
+               "php": ".php", "ruby": ".rb", "csharp": ".cs",
+               "kotlin": ".kt", "rust": ".rs", "cpp": ".cpp"}
 
     def flags(code, lang):
         import tempfile
@@ -223,3 +246,32 @@ def test_benchmark_scorecard_holds():
 
     assert false_positives == [], f"false positives: {false_positives}"
     assert modelled_tp == len(CASES), f"modelled recall dropped: {modelled_tp}/{len(CASES)}"
+
+
+def test_rules_doc_is_in_sync():
+    """docs/RULES.md must match the rule catalogue (regenerate if this fails)."""
+    from benchmarks import gen_rules_doc
+    expected = gen_rules_doc.render()
+    with open(gen_rules_doc._DOC_PATH, encoding="utf-8") as fh:
+        assert fh.read() == expected, "run: python -m benchmarks.gen_rules_doc"
+
+
+def test_every_rule_has_a_corpus_case():
+    """Every rule id fires on at least one corpus vulnerable snippet."""
+    import tempfile
+    from benchmarks.community_corpus import CASES
+    ext = {"python": ".py", "javascript": ".js", "go": ".go", "java": ".java",
+           "php": ".php", "ruby": ".rb", "csharp": ".cs", "kotlin": ".kt",
+           "rust": ".rs", "cpp": ".cpp"}
+    scanner = CodeWeaknessScanner()
+    fired = set()
+    for _cid, lang, _cwe, vuln, _secure in CASES:
+        fd, path = tempfile.mkstemp(suffix=ext[lang])
+        try:
+            with os.fdopen(fd, "w") as fh:
+                fh.write(vuln)
+            fired.update(f["rule_id"] for f in scanner.scan_file(path))
+        finally:
+            os.unlink(path)
+    missing = set(RULES) - fired
+    assert not missing, f"rules with no corpus coverage: {sorted(missing)}"

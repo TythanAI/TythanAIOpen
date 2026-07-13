@@ -19,6 +19,8 @@ Options:
     --sarif <file>     Write SARIF 2.1.0 output to <file>
     --html  <file>     Write HTML report to <file>
     --json  <file>     Write JSON findings to <file>
+    --baseline <file>  Suppress findings recorded in <file>; gate CI on new ones
+    --update-baseline  Record the current findings to the --baseline file (exit 0)
     --quiet            Suppress progress messages
 """
 from __future__ import annotations
@@ -70,7 +72,7 @@ _BANNER = r"""
   / / / / / / __/ __ \/ __ `/ _ \/ /| |  / /
  / / / /_/ / /_/ / / / /_/ /  __/ ___ |_/ /
 /_/  \__, /\__/_/ /_/\__,_/\___/_/  |_/___/
-    /____/   Community Edition  v1.4
+    /____/   Community Edition  v1.5
 """
 
 def _print_banner() -> None:
@@ -183,8 +185,27 @@ def cmd_scan(args) -> int:
     )
     elapsed = time.monotonic() - t0
 
+    # ── Baseline handling ──────────────────────────────────────────────────────
+    if args.update_baseline:
+        if not args.baseline:
+            print(RED("Error: --update-baseline requires --baseline <file>"), file=sys.stderr)
+            return 1
+        from community.baseline import save as _save_baseline
+        n = _save_baseline(args.baseline, result.all_findings, result.target)
+        if not args.quiet:
+            print(GREEN(f"  Baseline written → {args.baseline} ({n} fingerprints)"))
+            print()
+        return 0
+
+    suppressed = 0
+    if args.baseline:
+        from community.baseline import load as _load_baseline, apply as _apply_baseline
+        suppressed = _apply_baseline(result, _load_baseline(args.baseline), result.target)
+
     _print_findings(result, args.quiet)
     _print_summary(result)
+    if suppressed and not args.quiet:
+        print(DIM(f"  Baseline: {suppressed} known finding(s) suppressed — showing new only"))
     _print_gated(result)
 
     if not args.quiet:
@@ -224,7 +245,7 @@ def cmd_scan(args) -> int:
 
 
 def cmd_version(args) -> int:
-    print("TythanAI Community Edition v1.4.0")
+    print("TythanAI Community Edition v1.5.0")
     print("Copyright (c) 2026 TythanAI Labs — BSL 1.1")
     print("https://tythanai.io")
     return 0
@@ -249,6 +270,10 @@ def _build_parser() -> argparse.ArgumentParser:
     scan.add_argument("--sarif", metavar="FILE")
     scan.add_argument("--html",  metavar="FILE")
     scan.add_argument("--json",  metavar="FILE")
+    scan.add_argument("--baseline", metavar="FILE",
+                      help="suppress findings recorded in FILE (report only new ones)")
+    scan.add_argument("--update-baseline", action="store_true",
+                      help="write current findings to the --baseline file and exit 0")
     scan.add_argument("--quiet", "-q", action="store_true")
 
     sub.add_parser("version", help="Show version information")

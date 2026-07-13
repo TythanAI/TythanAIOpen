@@ -5,7 +5,8 @@ Priorities may shift based on user feedback.
 
 ## Now (Community Edition)
 
-- Built-in **offline SAST engine** for **Python, JS/TS, Go, Java, PHP, Ruby and C#** (weak crypto, insecure deserialization, TLS-off, eval/exec, command injection, dynamic SQL incl. cross-function, insecure randomness, XXE, path traversal) — no external tools or network
+- Built-in **offline SAST engine** for **10 languages** (Python, JS/TS, Go, Java, PHP, Ruby, C#, Kotlin, Rust, C/C++): weak crypto, insecure deserialization, TLS-off, eval/exec, command injection, dynamic SQL incl. cross-function, insecure randomness, XXE, path traversal, dangerous C functions — no external tools or network
+- CI baseline (`--baseline`) to gate on new findings only; Docker image; SARIF with CWE tags
 - Optional Semgrep integration for extra language/rule breadth
 - SCA via OSV.dev + EPSS enrichment, with an offline fallback
 - Secrets detection in source

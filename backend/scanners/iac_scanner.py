@@ -198,7 +198,6 @@ class IaCScanner:
         if not p.exists():
             return []
         content = p.read_text(errors="replace")
-        name = p.name.lower()
 
         if p.suffix == ".tf":
             return _scan_terraform(content, file_path)

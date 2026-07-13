@@ -14,6 +14,7 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/TythanAI/TythanAIOpen/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/TythanAI/TythanAIOpen/actions/workflows/ci.yml/badge.svg"></a>
   <a href="LICENSE"><img alt="License: BSL 1.1" src="https://img.shields.io/badge/license-BSL%201.1-0b0b0c.svg"></a>
   <a href="https://www.python.org/"><img alt="Python 3.10+" src="https://img.shields.io/badge/python-3.10%2B-3776ab.svg"></a>
   <img alt="Engines" src="https://img.shields.io/badge/engines-SAST%20%C2%B7%20SCA%20%C2%B7%20Secrets%20%C2%B7%20IaC%20%C2%B7%20Web3-41d18a.svg">
@@ -97,7 +98,7 @@ Everything below runs **locally, free, with no account**:
 | Engine | What it does |
 |--------|--------------|
 | 🪙 **Web3 audit** | Native static checks for **TON (FunC/Tolk)**, **Solidity/EVM**, **Solana/Anchor** and **CosmWasm** — reentrancy, unchecked low-level calls, missing sender validation, gas-drain, weak randomness, `tx.origin` auth, unprotected `selfdestruct`, hardcoded keys, and more. |
-| 🔍 **SAST** | A **built-in, offline rule engine** for **Python, JS/TS, Go, Java, PHP, Ruby and C#** flags weak crypto, unsafe deserialization, disabled TLS, `eval`/`exec`, command injection, dynamic SQL (incl. across a helper function), insecure randomness, XXE and user-controlled file paths — no external tools, no network. Add [Semgrep](https://semgrep.dev) for extra breadth (Rust, Kotlin, C/C++…), normalised into the same finding format. |
+| 🔍 **SAST** | A **built-in, offline rule engine** for **10 languages** — Python, JS/TS, Go, Java, PHP, Ruby, C#, Kotlin, Rust and C/C++ — flags weak crypto, unsafe deserialization, disabled TLS, `eval`/`exec`, command injection, dynamic SQL (incl. across a helper function), insecure randomness, XXE, dangerous C functions and user-controlled file paths — no external tools, no network. Full rule list: [docs/RULES.md](docs/RULES.md). Add [Semgrep](https://semgrep.dev) for extra breadth, normalised into the same finding format. |
 | 📦 **SCA** | Dependency CVEs from **[OSV.dev](https://osv.dev)** with EPSS exploit-probability ranking, and an offline known-CVE fallback so you still get results with no network. |
 | 🔑 **Secrets** | **40+ secret patterns across 27 providers** (AWS, GCP, GitHub, Stripe, Slack, database URIs, private keys, crypto wallets…) plus entropy analysis. |
 | ☁️ **IaC** | Terraform, Kubernetes and CloudFormation misconfiguration checks (public buckets, open security groups, missing encryption…). |
@@ -147,6 +148,31 @@ jobs:
         with:
           sarif_file: results.sarif
 ```
+
+### Baseline — fail CI only on *new* findings
+
+Adopt the scanner on an existing codebase without drowning in pre-existing
+issues. Record a baseline once, then gate on anything new:
+
+```bash
+# Record the current findings as accepted (run once, commit the file)
+tythanai scan . --baseline .tythanai-baseline.json --update-baseline
+
+# In CI: only NEW findings are shown, and only they can fail the build
+tythanai scan . --baseline .tythanai-baseline.json
+```
+
+Fingerprints are line-independent, so moving code around doesn't create noise —
+only a genuinely new issue counts as new.
+
+### Docker
+
+```bash
+docker build -t tythanai/community .
+docker run --rm -v "$PWD:/src" tythanai/community scan /src
+```
+
+The built-in engine needs no network; mount your code read-only and scan.
 
 ---
 
@@ -243,8 +269,8 @@ python -m benchmarks.measure
 
 | Scope | Recall (TPR) | False positives |
 |-------|:---:|:---:|
-| **Modelled weakness classes** — weak crypto, insecure deserialization, TLS-off, `eval`/`exec`, command injection, dynamic SQL, XSS/SSTI, insecure randomness, XXE, path traversal (**10 CWE classes** across **7 languages**: Python · JS/TS · Go · Java · PHP · Ruby · C#) | **100%** (53/53) | **0%** |
-| **Overall, incl. out-of-model taint classes** | **94.6%** (53/56) | **0%** |
+| **Modelled weakness classes** — weak crypto, insecure deserialization, TLS-off, `eval`/`exec`, command injection, dynamic SQL, XSS/SSTI, insecure randomness, XXE, path traversal, dangerous C functions (**11 CWE classes** across **10 languages**: Python · JS/TS · Go · Java · PHP · Ruby · C# · Kotlin · Rust · C/C++) | **100%** (63/63) | **0%** |
+| **Overall, incl. out-of-model taint classes** | **95.5%** (63/66) | **0%** |
 
 Two things we do on purpose:
 
@@ -257,7 +283,7 @@ Two things we do on purpose:
 
 > The corpus is maintained in-repo alongside the rules — authoring is disclosed,
 > not hidden. The Community Edition also carries a full unit-test suite:
-> `pytest tests/ -v` (**124 tests**).
+> `pytest tests/ -v` (**144 tests**).
 
 ---
 

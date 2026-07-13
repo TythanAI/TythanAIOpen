@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tythanai-community"
-version = "1.4.0"
+version = "1.5.0"
 description = "Open-source security scanner — SAST, SCA, Secrets, IaC, TON/Solana/CosmWasm/Solidity"
 readme = "README.md"
 license = {text = "BSL-1.1"}
@@ -85,7 +85,22 @@ target-version = "py310"
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I"]
-ignore = ["E501", "F401"]
+# The codebase deliberately uses aligned inline `if x: return`, lambda colour
+# helpers, graceful bare-except fallbacks, and a sys.path shim in CLI/scripts.
+# Keep the meaningful correctness checks (undefined names, unused vars, …) and
+# silence the purely stylistic ones that clash with that house style.
+ignore = [
+    "E501",  # line length
+    "F401",  # unused import (re-exports)
+    "E701",  # multiple statements on one line (colon) — aligned if/return
+    "E702",  # multiple statements on one line (semicolon)
+    "E731",  # lambda assignment (RED/GREEN colour helpers)
+    "E741",  # ambiguous variable name (l in loops)
+    "E722",  # bare except (intentional graceful fallbacks)
+    "E402",  # module import not at top (sys.path shim first)
+    "E401",  # multiple imports on one line
+    "I001",  # import sorting (conflicts with the sys.path shim ordering)
+]
 
 [tool.mypy]
 python_version = "3.11"

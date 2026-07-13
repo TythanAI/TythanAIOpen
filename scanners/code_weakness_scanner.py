@@ -12,8 +12,8 @@ direct-user-input file access). Python is analysed with the `ast` module
 (structural, low false-positive) including a light *local* def-use pass so SQL
 built into a variable and then executed is still caught, plus an intra-module
 pass that flags dynamic SQL passed into a query-helper function. JavaScript/
-TypeScript, Go, Java, PHP, Ruby and C# are analysed with a small set of
-conservative, comment-aware line patterns.
+TypeScript, Go, Java, PHP, Ruby, C#, Kotlin, Rust and C/C++ are analysed with a
+small set of conservative, comment-aware line patterns.
 
 This runs with **no network and no external tools**, so `tythanai scan`
 always produces SAST results even when Semgrep is not installed. When Semgrep
@@ -38,8 +38,12 @@ _JAVA_EXTS = {".java"}
 _PHP_EXTS = {".php", ".php5", ".phtml"}
 _RUBY_EXTS = {".rb"}
 _CS_EXTS = {".cs"}
+_KOTLIN_EXTS = {".kt", ".kts"}
+_RUST_EXTS = {".rs"}
+_CPP_EXTS = {".c", ".cc", ".cpp", ".cxx", ".h", ".hpp", ".hh"}
 _ALL_EXTS = (_PY_EXTS | _JS_EXTS | _GO_EXTS | _JAVA_EXTS
-             | _PHP_EXTS | _RUBY_EXTS | _CS_EXTS)
+             | _PHP_EXTS | _RUBY_EXTS | _CS_EXTS
+             | _KOTLIN_EXTS | _RUST_EXTS | _CPP_EXTS)
 _SKIP_DIRS = {
     ".git", "__pycache__", "node_modules", ".venv", "venv", "env",
     "dist", "build", ".tox", ".mypy_cache", ".pytest_cache", "site-packages",
@@ -101,6 +105,19 @@ RULES: Dict[str, Dict[str, str]] = {
     "TYT-C002": {"cwe": "CWE-78",  "severity": "HIGH",   "title": "Command execution with concatenated input"},
     "TYT-C003": {"cwe": "CWE-89",  "severity": "HIGH",   "title": "SQL built from concatenation/interpolation"},
     "TYT-C004": {"cwe": "CWE-502", "severity": "HIGH",   "title": "Unsafe deserialization (BinaryFormatter)"},
+    # Kotlin
+    "TYT-K001": {"cwe": "CWE-327", "severity": "MEDIUM", "title": "Weak hash/cipher (MD5/SHA-1/DES/ECB)"},
+    "TYT-K002": {"cwe": "CWE-78",  "severity": "HIGH",   "title": "Command execution with concatenated/interpolated input"},
+    "TYT-K003": {"cwe": "CWE-89",  "severity": "HIGH",   "title": "SQL built from concatenation/interpolation"},
+    "TYT-K004": {"cwe": "CWE-502", "severity": "HIGH",   "title": "Unsafe deserialization (ObjectInputStream)"},
+    # Rust
+    "TYT-U001": {"cwe": "CWE-327", "severity": "MEDIUM", "title": "Weak hash (MD5/SHA-1)"},
+    "TYT-U002": {"cwe": "CWE-78",  "severity": "HIGH",   "title": "Command built with format!()"},
+    "TYT-U003": {"cwe": "CWE-89",  "severity": "HIGH",   "title": "SQL built with format!() (injection)"},
+    # C / C++
+    "TYT-X001": {"cwe": "CWE-676", "severity": "HIGH",   "title": "Dangerous unbounded function (strcpy/strcat/sprintf/gets)"},
+    "TYT-X002": {"cwe": "CWE-78",  "severity": "HIGH",   "title": "Command execution via system() with dynamic input"},
+    "TYT-X003": {"cwe": "CWE-327", "severity": "MEDIUM", "title": "Weak hash primitive (MD5/SHA-1)"},
 }
 
 
@@ -442,6 +459,25 @@ _CS_RULES: List[tuple] = [
     ("TYT-C004", re.compile(r"new\s+BinaryFormatter\s*\(")),
 ]
 
+_KOTLIN_RULES: List[tuple] = [
+    ("TYT-K001", re.compile(r"getInstance\s*\(\s*\"(MD5|SHA-?1|DES|DES/|RC4|AES/ECB)", re.I)),
+    ("TYT-K002", re.compile(r"(Runtime\.getRuntime\(\)\.exec|ProcessBuilder)\s*\([^)]*(\+|\$)")),
+    ("TYT-K003", re.compile(r"\.(executeQuery|executeUpdate|execute|rawQuery)\s*\(\s*\"[^\"]*(\$\{?\w|\"\s*\+)")),
+    ("TYT-K004", re.compile(r"ObjectInputStream\s*\(")),
+]
+
+_RUST_RULES: List[tuple] = [
+    ("TYT-U001", re.compile(r"\b(Md5::new|Sha1::new|md5::compute)\b")),
+    ("TYT-U002", re.compile(r"(\.arg|\.args|Command::new)\s*\(\s*&?format!\s*\(")),
+    ("TYT-U003", re.compile(r"\b(query|execute|query_as)\s*\(\s*&?format!\s*\(")),
+]
+
+_CPP_RULES: List[tuple] = [
+    ("TYT-X001", re.compile(r"\b(strcpy|strcat|sprintf|gets)\s*\(")),
+    ("TYT-X002", re.compile(r"\bsystem\s*\([^)]*(\+|c_str\s*\()")),
+    ("TYT-X003", re.compile(r"\b(MD5_Init|SHA1_Init|EVP_md5|EVP_sha1)\s*\(")),
+]
+
 _COMMENT = re.compile(r"^\s*(//|\*|/\*|#)")
 _JAVA_A005_CONTEXT = re.compile(
     r"(token|secret|key|passwd|password|pwd|nonce|salt|otp|session|csrf)", re.I)
@@ -488,6 +524,18 @@ def _scan_csharp(text: str, file: str) -> List[dict]:
     return _scan_lines(text, file, _CS_RULES)
 
 
+def _scan_kotlin(text: str, file: str) -> List[dict]:
+    return _scan_lines(text, file, _KOTLIN_RULES)
+
+
+def _scan_rust(text: str, file: str) -> List[dict]:
+    return _scan_lines(text, file, _RUST_RULES)
+
+
+def _scan_cpp(text: str, file: str) -> List[dict]:
+    return _scan_lines(text, file, _CPP_RULES)
+
+
 # ── Public scanner ────────────────────────────────────────────────────────────
 
 class CodeWeaknessScanner:
@@ -519,6 +567,12 @@ class CodeWeaknessScanner:
             return _scan_ruby(text, str(p))
         if ext in _CS_EXTS:
             return _scan_csharp(text, str(p))
+        if ext in _KOTLIN_EXTS:
+            return _scan_kotlin(text, str(p))
+        if ext in _RUST_EXTS:
+            return _scan_rust(text, str(p))
+        if ext in _CPP_EXTS:
+            return _scan_cpp(text, str(p))
         return []
 
     def scan_directory(self, directory: str) -> List[dict]:
