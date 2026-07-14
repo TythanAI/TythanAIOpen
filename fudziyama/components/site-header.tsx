@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Phone, ShoppingBag } from "lucide-react";
+import { Clock, MapPin, Phone, ShoppingBag } from "lucide-react";
 
 import { SITE } from "@/lib/site";
 import { formatPrice } from "@/lib/utils";
@@ -19,31 +19,49 @@ export function SiteHeader() {
   const count = hydrated ? totalCount : 0;
 
   return (
-    <header className="sticky top-0 z-50 h-16 border-b bg-background/90 backdrop-blur-md">
+    <header className="sticky top-0 z-50 h-16 border-b bg-card/95 backdrop-blur-md">
       <div className="container flex h-full items-center justify-between gap-4">
-        <a href="#" className="flex items-baseline gap-2">
-          <span className="text-xl font-bold tracking-tight">{SITE.name}</span>
-          <span className="hidden text-xs text-muted-foreground sm:inline">
-            {SITE.tagline}
-          </span>
-        </a>
+        <div className="flex items-center gap-6">
+          <a href="#" className="flex items-center gap-2">
+            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-lg font-extrabold text-primary-foreground">
+              Ф
+            </span>
+            <span className="text-lg font-extrabold tracking-tight">
+              {SITE.name}
+            </span>
+          </a>
+          <div className="hidden flex-col text-xs text-muted-foreground lg:flex">
+            <span className="flex items-center gap-1.5">
+              <MapPin className="h-3.5 w-3.5" />
+              {SITE.address}
+            </span>
+            <span className="flex items-center gap-1.5">
+              <Clock className="h-3.5 w-3.5" />
+              {SITE.workHours}
+            </span>
+          </div>
+        </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <a
             href={SITE.phoneHref}
-            className="hidden items-center gap-2 text-sm font-medium transition-colors hover:text-primary md:flex"
+            className="hidden items-center gap-2 text-sm font-bold transition-colors hover:text-primary md:flex"
           >
-            <Phone className="h-4 w-4" />
+            <Phone className="h-4 w-4 text-primary" />
             {SITE.phone}
           </a>
 
-          <Button onClick={openCart} className="relative" aria-label="Открыть корзину">
+          <Button
+            onClick={openCart}
+            className="relative rounded-full font-bold"
+            aria-label="Открыть корзину"
+          >
             <ShoppingBag />
             <span className="hidden sm:inline">
               {count > 0 ? formatPrice(totalPrice) : "Корзина"}
             </span>
             {count > 0 && (
-              <span className="absolute -right-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-foreground px-1 text-xs font-bold text-background">
+              <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-card bg-foreground px-1 text-[11px] font-bold text-card">
                 {count}
               </span>
             )}

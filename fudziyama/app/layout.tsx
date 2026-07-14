@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Manrope } from "next/font/google";
 
 import { SITE } from "@/lib/site";
 import { SiteHeader } from "@/components/site-header";
@@ -8,7 +8,7 @@ import { CartSheet } from "@/components/cart-sheet";
 
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin", "cyrillic"] });
+const manrope = Manrope({ subsets: ["latin", "cyrillic"] });
 
 export const metadata: Metadata = {
   title: `${SITE.name} — доставка суши, роллов и сетов в Усть-Куте`,
@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#121214",
+  themeColor: "#f6f6f8",
 };
 
 export default function RootLayout({
@@ -24,7 +24,7 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="ru">
-      <body className={inter.className}>
+      <body className={manrope.className}>
         <SiteHeader />
         <main>{children}</main>
         <SiteFooter />

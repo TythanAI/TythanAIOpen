@@ -62,14 +62,17 @@ function rng(seed) {
 const header = (id) =>
   `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}">` +
   `<defs><radialGradient id="bg-${id}" cx="50%" cy="35%" r="80%">` +
-  `<stop offset="0%" stop-color="#26262c"/><stop offset="100%" stop-color="#141417"/>` +
+  `<stop offset="0%" stop-color="#ffffff"/><stop offset="100%" stop-color="#efeff2"/>` +
   `</radialGradient></defs>` +
   `<rect width="${W}" height="${H}" fill="url(#bg-${id})"/>`;
 
+const SHADOW = 0.1; // мягкие тени под блюдами на светлом фоне
+
 function rollPiece(x, y, r, outer, fillings, rand, tempura) {
   const parts = [];
-  parts.push(`<circle cx="${x}" cy="${y + 6}" r="${r}" fill="#000" opacity="0.35"/>`);
-  parts.push(`<circle cx="${x}" cy="${y}" r="${r}" fill="${outer}"/>`);
+  parts.push(`<circle cx="${x}" cy="${y + 6}" r="${r}" fill="#000" opacity="${SHADOW}"/>`);
+  const edge = tempura ? "#c08c4a" : outer === "#f5f2e8" ? "#e0d9c2" : "#1f2321";
+  parts.push(`<circle cx="${x}" cy="${y}" r="${r}" fill="${outer}" stroke="${edge}" stroke-width="2"/>`);
   if (tempura) {
     // Хрустящая кромка кляра
     for (let i = 0; i < 14; i++) {
@@ -133,13 +136,13 @@ function gunkanSvg(item) {
   const cx = W / 2;
   const cy = H / 2 + 20;
   const parts = [header(item.id)];
-  parts.push(`<ellipse cx="${cx}" cy="${cy + 90}" rx="150" ry="26" fill="#000" opacity="0.35"/>`);
+  parts.push(`<ellipse cx="${cx}" cy="${cy + 90}" rx="150" ry="26" fill="#000" opacity="${SHADOW}"/>`);
   if (/суши рис, лосось$|суши рис, креветка$/i.test(item.description.trim())) {
     // Нигири: рис + ломтик сверху
-    parts.push(`<ellipse cx="${cx}" cy="${cy + 60}" rx="140" ry="55" fill="#f5f2e8"/>`);
+    parts.push(`<ellipse cx="${cx}" cy="${cy + 60}" rx="140" ry="55" fill="#f5f2e8" stroke="#e0d9c2" stroke-width="2"/>`);
     parts.push(`<path d="M ${cx - 150} ${cy + 30} Q ${cx} ${cy - 60} ${cx + 150} ${cy + 30} Q ${cx} ${cy + 80} ${cx - 150} ${cy + 30} Z" fill="${top}"/>`);
     for (let i = -2; i <= 2; i++) {
-      parts.push(`<path d="M ${cx + i * 40 - 20} ${cy - 20} q 20 20 40 34" stroke="#ffffff" stroke-opacity="0.35" stroke-width="5" fill="none"/>`);
+      parts.push(`<path d="M ${cx + i * 40 - 20} ${cy - 20} q 20 20 40 34" stroke="#ffffff" stroke-opacity="${SHADOW}" stroke-width="5" fill="none"/>`);
     }
   } else {
     // Гункан: борт из нори + горка начинки
@@ -162,7 +165,7 @@ function burgerSvg(item) {
   const shrimp = /креветк/i.test(item.description);
   const patty = shrimp ? "#e8a380" : /куриная/i.test(item.description) ? "#d9a45b" : "#6b4226";
   const parts = [header(item.id)];
-  parts.push(`<ellipse cx="${cx}" cy="${cy + 110}" rx="200" ry="28" fill="#000" opacity="0.35"/>`);
+  parts.push(`<ellipse cx="${cx}" cy="${cy + 110}" rx="200" ry="28" fill="#000" opacity="${SHADOW}"/>`);
   parts.push(`<path d="M ${cx - 190} ${cy - 40} Q ${cx} ${cy - 190} ${cx + 190} ${cy - 40} Z" fill="#e0913f"/>`);
   parts.push(`<circle cx="${cx - 60}" cy="${cy - 110}" r="5" fill="#f7e8c8"/><circle cx="${cx + 10}" cy="${cy - 130}" r="5" fill="#f7e8c8"/><circle cx="${cx + 70}" cy="${cy - 100}" r="5" fill="#f7e8c8"/>`);
   parts.push(`<path d="M ${cx - 190} ${cy - 40} h 380 l -22 24 -30 -16 -30 18 -30 -18 -30 18 -30 -18 -30 18 -30 -18 -30 18 -30 -16 Z" fill="#8db052"/>`);
@@ -184,7 +187,7 @@ function shaurmaSvg(item) {
   const cx = W / 2;
   const cy = H / 2;
   const parts = [header(item.id)];
-  parts.push(`<ellipse cx="${cx}" cy="${cy + 130}" rx="230" ry="30" fill="#000" opacity="0.35"/>`);
+  parts.push(`<ellipse cx="${cx}" cy="${cy + 130}" rx="230" ry="30" fill="#000" opacity="${SHADOW}"/>`);
   for (const [dx, dy, rot] of [[-40, 30, -18], [50, -10, -14]]) {
     parts.push(`<g transform="rotate(${rot} ${cx + dx} ${cy + dy})">`);
     parts.push(`<rect x="${cx + dx - 190}" y="${cy + dy - 55}" width="380" height="110" rx="55" fill="#e8c07d"/>`);
@@ -225,7 +228,7 @@ const EXTRA_COLORS = {
 
 function snackSvg(item) {
   const parts = [header(item.id)];
-  parts.push(`<ellipse cx="${W / 2}" cy="${H / 2 + 130}" rx="170" ry="26" fill="#000" opacity="0.35"/>`);
+  parts.push(`<ellipse cx="${W / 2}" cy="${H / 2 + 130}" rx="170" ry="26" fill="#000" opacity="${SHADOW}"/>`);
   parts.push(`<text x="50%" y="54%" text-anchor="middle" dominant-baseline="middle" font-size="220">${SNACK_EMOJI[item.id] ?? "🍽️"}</text>`);
   parts.push("</svg>");
   return parts.join("");
@@ -236,7 +239,7 @@ function extraSvg(item) {
   const cx = W / 2;
   const cy = H / 2 + 10;
   const parts = [header(item.id)];
-  parts.push(`<ellipse cx="${cx}" cy="${cy + 105}" rx="140" ry="24" fill="#000" opacity="0.35"/>`);
+  parts.push(`<ellipse cx="${cx}" cy="${cy + 105}" rx="140" ry="24" fill="#000" opacity="${SHADOW}"/>`);
   parts.push(`<path d="M ${cx - 120} ${cy - 40} L ${cx - 100} ${cy + 95} Q ${cx} ${cy + 120} ${cx + 100} ${cy + 95} L ${cx + 120} ${cy - 40} Z" fill="#f5f2e8"/>`);
   parts.push(`<ellipse cx="${cx}" cy="${cy - 40}" rx="120" ry="34" fill="#e6e0cf"/>`);
   parts.push(`<ellipse cx="${cx}" cy="${cy - 38}" rx="104" ry="27" fill="${color}"/>`);

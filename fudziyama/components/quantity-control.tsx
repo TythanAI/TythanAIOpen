@@ -21,12 +21,12 @@ export function QuantityControl({
   className,
   size = "default",
 }: QuantityControlProps) {
-  const buttonSize = size === "sm" ? "h-8 w-8" : "h-10 w-10";
+  const buttonSize = size === "sm" ? "h-8 w-8 rounded-full" : "h-10 w-10 rounded-full";
 
   return (
     <div
       className={cn(
-        "flex items-center justify-between rounded-md bg-secondary",
+        "flex items-center justify-between rounded-full bg-secondary",
         className
       )}
     >

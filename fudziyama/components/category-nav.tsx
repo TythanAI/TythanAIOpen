@@ -64,7 +64,7 @@ export function CategoryNav({ categories }: CategoryNavProps) {
   return (
     <nav
       ref={navRef}
-      className="sticky top-16 z-40 border-b bg-background/90 backdrop-blur-md"
+      className="sticky top-16 z-40 border-b bg-card/95 backdrop-blur-md"
       aria-label="Категории меню"
     >
       <div className="container flex gap-2 overflow-x-auto py-3 no-scrollbar">
@@ -75,10 +75,10 @@ export function CategoryNav({ categories }: CategoryNavProps) {
             data-category={category.id}
             onClick={() => scrollToCategory(category.id)}
             className={cn(
-              "shrink-0 rounded-full px-4 py-2 text-sm font-medium transition-colors",
+              "shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition-colors",
               activeId === category.id
                 ? "bg-primary text-primary-foreground"
-                : "bg-secondary text-muted-foreground hover:text-foreground"
+                : "bg-secondary text-muted-foreground hover:bg-secondary/70 hover:text-foreground"
             )}
           >
             {category.title}

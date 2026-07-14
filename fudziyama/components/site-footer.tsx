@@ -4,7 +4,7 @@ import { SITE } from "@/lib/site";
 
 export function SiteFooter() {
   return (
-    <footer className="border-t py-10">
+    <footer className="mt-6 border-t bg-card py-10">
       <div className="container flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
         <div className="space-y-1">
           <p className="text-lg font-bold">{SITE.name}</p>

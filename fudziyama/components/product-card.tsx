@@ -26,35 +26,35 @@ export function ProductCard({ product }: ProductCardProps) {
   React.useEffect(() => setHydrated(true), []);
   const quantity = hydrated ? cartItem?.quantity ?? 0 : 0;
 
+  const measure = product.portion ?? (product.weight ? formatWeight(product.weight) : null);
+
   return (
-    <article className="group flex flex-col overflow-hidden rounded-lg border bg-card transition-colors hover:border-muted-foreground/30">
-      <ProductImage src={productImage(product)} alt={product.name} />
+    <article className="group flex flex-col overflow-hidden rounded-2xl bg-card shadow-sm ring-1 ring-black/5 transition-shadow hover:shadow-lg">
+      <div className="relative">
+        <ProductImage src={productImage(product)} alt={product.name} />
+        {measure && (
+          <span className="absolute right-3 top-3 rounded-full bg-card/90 px-2.5 py-1 text-xs font-semibold text-muted-foreground shadow-sm backdrop-blur">
+            {measure}
+          </span>
+        )}
+      </div>
 
-      <div className="flex flex-1 flex-col gap-2 p-4">
-        <div className="flex items-baseline justify-between gap-3">
-          <h3 className="text-base font-semibold leading-snug">
-            {product.name}
-          </h3>
-          {(product.portion || product.weight) && (
-            <span className="shrink-0 text-xs text-muted-foreground">
-              {product.portion ?? formatWeight(product.weight!)}
-            </span>
-          )}
-        </div>
+      <div className="flex flex-1 flex-col gap-1.5 p-4">
+        <h3 className="text-base font-bold leading-snug">{product.name}</h3>
 
-        <p className="line-clamp-3 flex-1 text-sm leading-relaxed text-muted-foreground">
+        <p className="line-clamp-3 flex-1 text-[13px] leading-relaxed text-muted-foreground">
           {product.description}
         </p>
 
-        <div className="mt-2 flex items-center justify-between gap-3">
-          <span className="text-lg font-bold tabular-nums">
+        <div className="mt-3 flex items-center justify-between gap-3">
+          <span className="text-lg font-extrabold tabular-nums">
             {formatPrice(product.price)}
           </span>
 
           <div className="w-32">
             {quantity === 0 ? (
               <Button
-                className="w-full animate-fade-in"
+                className="w-full animate-fade-in rounded-full font-bold"
                 onClick={() => addItem(product)}
               >
                 <Plus />
@@ -62,7 +62,7 @@ export function ProductCard({ product }: ProductCardProps) {
               </Button>
             ) : (
               <QuantityControl
-                className="w-full animate-fade-in"
+                className="w-full animate-fade-in rounded-full"
                 quantity={quantity}
                 onIncrement={() => increment(product.id)}
                 onDecrement={() => decrement(product.id)}
