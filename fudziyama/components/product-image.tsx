@@ -21,6 +21,15 @@ export function ProductImage({ src, alt, className, sizes }: ProductImageProps) 
   const [status, setStatus] = React.useState<"loading" | "loaded" | "error">(
     src ? "loading" : "error"
   );
+  const imgRef = React.useRef<HTMLImageElement>(null);
+
+  // onLoad не срабатывает для картинок, загруженных до гидратации, —
+  // проверяем готовность самостоятельно.
+  React.useEffect(() => {
+    if (imgRef.current?.complete && imgRef.current.naturalWidth > 0) {
+      setStatus("loaded");
+    }
+  }, []);
 
   return (
     <div
@@ -35,6 +44,7 @@ export function ProductImage({ src, alt, className, sizes }: ProductImageProps) 
 
       {src && status !== "error" && (
         <Image
+          ref={imgRef}
           src={src}
           alt={alt}
           fill

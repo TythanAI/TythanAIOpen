@@ -3,7 +3,7 @@
 import * as React from "react";
 import { Plus } from "lucide-react";
 
-import type { Product } from "@/lib/products";
+import { productImage, type Product } from "@/lib/products";
 import { formatPrice, formatWeight } from "@/lib/utils";
 import { useCart, useCartItem } from "@/store/use-cart";
 import { Button } from "@/components/ui/button";
@@ -28,16 +28,18 @@ export function ProductCard({ product }: ProductCardProps) {
 
   return (
     <article className="group flex flex-col overflow-hidden rounded-lg border bg-card transition-colors hover:border-muted-foreground/30">
-      <ProductImage src={product.image} alt={product.name} />
+      <ProductImage src={productImage(product)} alt={product.name} />
 
       <div className="flex flex-1 flex-col gap-2 p-4">
         <div className="flex items-baseline justify-between gap-3">
           <h3 className="text-base font-semibold leading-snug">
             {product.name}
           </h3>
-          <span className="shrink-0 text-xs text-muted-foreground">
-            {formatWeight(product.weight)}
-          </span>
+          {(product.portion || product.weight) && (
+            <span className="shrink-0 text-xs text-muted-foreground">
+              {product.portion ?? formatWeight(product.weight!)}
+            </span>
+          )}
         </div>
 
         <p className="line-clamp-3 flex-1 text-sm leading-relaxed text-muted-foreground">

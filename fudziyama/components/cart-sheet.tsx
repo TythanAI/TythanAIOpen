@@ -3,6 +3,7 @@
 import * as React from "react";
 import { CheckCircle2, ShoppingBag, Trash2 } from "lucide-react";
 
+import { productImage } from "@/lib/products";
 import { SITE } from "@/lib/site";
 import { formatPrice, formatWeight } from "@/lib/utils";
 import { useCart, useCartTotalCount, useCartTotalPrice } from "@/store/use-cart";
@@ -102,7 +103,7 @@ export function CartSheet() {
               {items.map(({ product, quantity }) => (
                 <li key={product.id} className="flex gap-3 py-4">
                   <ProductImage
-                    src={product.image}
+                    src={productImage(product)}
                     alt={product.name}
                     className="h-20 w-20 shrink-0 rounded-md aspect-square"
                     sizes="80px"
@@ -111,9 +112,11 @@ export function CartSheet() {
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
                         <p className="truncate text-sm font-medium">{product.name}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {formatWeight(product.weight)}
-                        </p>
+                        {(product.portion || product.weight) && (
+                          <p className="text-xs text-muted-foreground">
+                            {product.portion ?? formatWeight(product.weight!)}
+                          </p>
+                        )}
                       </div>
                       <Button
                         variant="ghost"
