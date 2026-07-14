@@ -1,0 +1,35 @@
+import type { Metadata, Viewport } from "next";
+import { Inter } from "next/font/google";
+
+import { SITE } from "@/lib/site";
+import { SiteHeader } from "@/components/site-header";
+import { SiteFooter } from "@/components/site-footer";
+import { CartSheet } from "@/components/cart-sheet";
+
+import "./globals.css";
+
+const inter = Inter({ subsets: ["latin", "cyrillic"] });
+
+export const metadata: Metadata = {
+  title: `${SITE.name} — доставка суши, роллов и сетов в Усть-Куте`,
+  description: `${SITE.name}: доставка японской кухни в Усть-Куте. ${SITE.deliveryNote}. Телефон: ${SITE.phone}. Адрес: ${SITE.address}.`,
+};
+
+export const viewport: Viewport = {
+  themeColor: "#121214",
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{ children: React.ReactNode }>) {
+  return (
+    <html lang="ru">
+      <body className={inter.className}>
+        <SiteHeader />
+        <main>{children}</main>
+        <SiteFooter />
+        <CartSheet />
+      </body>
+    </html>
+  );
+}
